@@ -19,6 +19,14 @@
 CTradeInfo * tradeInfo;
 CGridMaster *Grid;
 
+CDashboard  *Dashboard;
+CDashboard	*DashboardMaster;
+CDashboard	*DashboardSub;
+string MasterGridHeaderTxt = "Master Grid orders                                  " ;
+string SubGridHeaderTxt = "Sub Grid orders                                  ";
+string ColHeaderTxt =   "Ticket   Symbol   Type   LotSize   OpenPrice   Profit "  ;
+int TotalRowsSize = 10;
+int HeaderRowsToSkip = 3;
 
 /*
 //---Loggings
@@ -26,7 +34,7 @@ CGridMaster *Grid;
 CDashboard	*Dashboard;
 string GridHeaderTxt = "Master Grid orders                                  " ;
 string ColHeaderTxt =   "Ticket   Symbol   Type   LotSize   OpenPrice   Profit "  ;
-int DashboardSize = 10;
+
 int DashboardRowsToSkip=3;
 */
 
@@ -59,22 +67,41 @@ int OnInit()
 
    //--- Loggings Init
    //---
-	Dashboard	=	new CDashboard("MasterGridDB"
+	DashboardMaster	=	new CDashboard("MasterGridDB"
+	                              , CORNER_RIGHT_UPPER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
+	                              , 400                         // X Distance from margin
+	                              , 15);                      // Y Distance from margin 
+	
+	                              
+	//DashboardMaster.AddRow(CharToStr(232), clrWhite, "Wingdings", 20);
+	DashboardMaster.AddRow(MasterGridHeaderTxt, clrWhite, "Verdana", 10);
+	DashboardMaster.AddRow("", clrWhite, "Verdana", 10);
+	DashboardMaster.AddRow(ColHeaderTxt, clrWhite, "Verdana", 8);
+
+	//--- Add 10+ blank row to get the space for the list
+	for(int i=0;i<TotalRowsSize-1;i++)
+	  {
+	   DashboardMaster.AddRow("", clrWhite, "Verdana", 8);
+	  }
+   
+   //---
+   //SubGrid
+   DashboardSub	=	new CDashboard("SubGridDB"
 	                              , CORNER_RIGHT_UPPER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
 	                              , 8                         // X Distance from margin
 	                              , 15);                      // Y Distance from margin 
+	
 	                              
-	//Dashboard.AddRow(CharToStr(232), clrWhite, "Wingdings", 20);
-	Dashboard.AddRow(GridHeaderTxt, clrWhite, "Verdana", 10);
-	Dashboard.AddRow("", clrWhite, "Verdana", 10);
-	Dashboard.AddRow(ColHeaderTxt, clrWhite, "Verdana", 8);
+  	DashboardSub.AddRow(SubGridHeaderTxt, clrWhite, "Verdana", 10);
+	DashboardSub.AddRow("", clrWhite, "Verdana", 10);
+	DashboardSub.AddRow(ColHeaderTxt, clrWhite, "Verdana", 8);
 
 	//--- Add 10+ blank row to get the space for the list
-	for(int i=0;i<DashboardSize-1;i++)
+	for(int i=0;i<TotalRowsSize-1;i++)
 	  {
-	   Dashboard.AddRow("", clrWhite, "Verdana", 8);
+	   DashboardSub.AddRow("", clrWhite, "Verdana", 8);
 	  }
-
+     
    
 
 //---
@@ -106,8 +133,9 @@ void OnTick()
       
      }
    
-   Grid.ShowGridOrdersOnChart(Grid.mOrders);
-
+   Grid.ShowGridOrdersOnChart(DashboardMaster, Grid.mOrders, 3);
+   Grid.ShowGridOrdersOnChart(DashboardSub, Grid.mOrders, 3);
+   
 		  
   }
 
