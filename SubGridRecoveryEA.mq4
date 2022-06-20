@@ -15,6 +15,8 @@
 #include <Arrays/ArrayObj.mqh>
 #include <Blues/TradeInfoClass.mqh>
 
+extern  int OrderToStartDDReduce =  7  ; // Order To Start DD Reduce
+
 CTradeInfo *tradeInfo;
 CGridMaster *Grid;
 
@@ -102,19 +104,17 @@ void OnTick()
    if(IsNewBar() )
      {
       Grid.GetOrdersOpened(Grid.mOrders,InpMagicNumber);           //pass data to Grid array that match magicnumber
-      
+      Grid.GetSubGridOrders(Grid.mSubGrid,Grid.mSize,OrderToStartDDReduce);
      }
 
    static datetime	currentTime;
 	if (currentTime!=Time[0]) {
-		Grid.ShowGridOrdersOnChart(DashboardSub, Grid.mOrders, 3);   
-      Grid.ShowGridOrdersOnChart(DashboardMaster, Grid.mOrders, 3);
+		Grid.ShowGridOrdersOnChart(DashboardSub, Grid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
+      
+      Grid.ShowGridOrdersOnChart(DashboardMaster, Grid.mOrders, 3);  //pass main orders to Dashboard Sub
+ 
 		currentTime	=	Time[0];
-	}
-  
-
-   
-		  
+	}  
   }
 
 
