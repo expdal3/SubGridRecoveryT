@@ -8,6 +8,7 @@
 #property version   "1.00"
 #property strict
 
+
 #include "include/GridTradeFunction.mqh"
 #include "include/GridOrderManagement.mqh"
 #include "include/LogsFunction.mqh"
@@ -77,7 +78,9 @@ int OnInit()
    //--- Loggings Init - Create 2 dashboard
    AddGridDashboard(DashboardMaster, "MasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
    AddGridDashboard(DashboardSub, "SubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+   //--
 
+   
 //---
    return(INIT_SUCCEEDED);
   }
@@ -87,7 +90,13 @@ int OnInit()
 void OnDeinit(const int reason)
   {
 //---
-
+   if(reason==REASON_CHARTCLOSE
+      ||reason==REASON_CLOSE
+      ||reason==REASON_PROGRAM
+      ||reason==REASON_REMOVE
+      ||reason==REASON_TEMPLATE
+      )
+      SaveData(Grid);
   }
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
@@ -136,8 +145,6 @@ void AddGridDashboard(CDashboard &dashboard
    //---
 
 	
-	                              
-	//DashboardMaster.AddRow(CharToStr(232), clrWhite, "Wingdings", 20);
 	dashboard.AddRow(tableheadertxt, txtclr, txtfont, txtsize);
 	dashboard.AddRow("", txtclr, txtfont, txtsize-2);
 	dashboard.AddRow(colheadertxt, txtclr, txtfont, txtsize-2);
@@ -148,3 +155,61 @@ void AddGridDashboard(CDashboard &dashboard
 	   dashboard.AddRow("", txtclr, txtfont, txtsize-2);
 	  }
 }
+void SaveData(CGridMaster &grid){
+   grid.ConvertToBinFormat();  // grid.mOrders, grid.mBinOrders transfer orders to Bin-writable format (remove all string variable)
+   string terminal_data_path = TerminalInfoString(TERMINAL_DATA_PATH);
+   //string filename = terminal_data_path + "\\MQL4\\Files\\SubGridRecoveryFiles\\"+"mastegridorders.bin";
+   string filename = "mastegridorders.bin";
+   filename = StringTrimRight(StringTrimLeft(filename));
+   PrintFormat("the file name is %s", filename);               //"C:/Users/ducan/AppData/Roaming/MetaQuotes/Terminal/17B5FF217FE004B792EFA9D824B75EEC/MQL4/Files/SubGridRecoveryFiles/mastegridorders.bin";
+
+   int filehandle = FileOpen(filename,FILE_WRITE|FILE_BIN);
+
+   if(filehandle!=INVALID_HANDLE)
+     {
+      Print("File is valid");
+      //--- prepare the counter of the number of bytes
+      uint counter=0;
+      FileWrite(filehandle,__FILE__);
+      FileWrite(filehandle,TimeCurrent());
+      FileWrite(filehandle,grid.mSize);
+
+           
+      for(int i=0;i<grid.mSize-1;i++)
+        {         
+         PrintFormat("...Writing order ticket %d to file",grid.mBinOrders[i].Ticket);
+         uint byteswritten=FileWriteStruct(
+                filehandle       // File handle
+                ,grid.mBinOrders[i]     // link to an object
+                  );
+      
+       
+       //--- check the number of bytes written
+       
+         if(byteswritten!=sizeof(SOrderInfo_BinFormat))
+           {
+            PrintFormat("Error read data. Error code=%d",GetLastError());
+            //--- close the file
+            FileClose(filehandle);
+            return;
+           }
+         else counter+=byteswritten;
+         }
+     //--- close the file
+     FileClose(filehandle);                 
+     }
+
+     else { PrintFormat("Failed to open %s file, Error code = %d",filename,GetLastError());}
+     
+     //---for testing mode
+     Print("Is tsting ", IsTesting());
+     Print("src file ",terminal_data_path+"\\tester\\files\\"+filename);
+     Print("dst file ",terminal_data_path+"\\MQL4\\Files\\SubGridRecoveryFiles\\"+filename);
+     string src_file_path = terminal_data_path+"\\tester\\files\\"+filename;
+     string dst_file_path = terminal_data_path+"\\MQL4\\Files\\SubGridRecoveryFiles\\"+filename;
+     if(IsTesting()){
+     if(!FileCopy(src_file_path,0,dst_file_path,FILE_REWRITE))PrintFormat("Error read data. Error code=%d",GetLastError());
+     }
+     
+}
+
