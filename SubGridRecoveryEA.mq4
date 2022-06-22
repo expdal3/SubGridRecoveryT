@@ -24,7 +24,7 @@ CGridMaster *Grid;
 //---declare dashboard logggings
 CDashboard DashboardMaster("MasterGridDB"
 	                              , CORNER_RIGHT_UPPER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
-	                              , 500                         // X Distance from margin
+	                              , 750                         // X Distance from margin
 	                              , 15);                      // Y Distance from margin 
    
 CDashboard DashboardSub("SubGridDB"
@@ -32,9 +32,9 @@ CDashboard DashboardSub("SubGridDB"
 	                              , 3                         // X Distance from margin
 	                              , 15);                      // Y Distance from margin 
 
-string MasterGridHeaderTxt = "Master Grid orders                                  " ;
-string SubGridHeaderTxt = "Sub Grid orders                                  ";
-string ColHeaderTxt =   "Ticket   Symbol   Type   LotSize   OpenPrice   Profit "  ;
+string MasterGridHeaderTxt = "Master Grid orders                                           " ;
+string SubGridHeaderTxt = "Sub Grid orders                                             ";
+string ColHeaderTxt =   "Ticket   Symbol   Type   LotSize   OpenPrice   Profit           "  ;
 int TotalRowsSize = 10;
 int HeaderRowsToSkip = 3;
 
@@ -118,12 +118,14 @@ void OnTick()
      {
       Grid.GetOrdersOpened(Grid.mOrders,InpMagicNumber);           //pass data to Grid array that match magicnumber
       Grid.GetSubGridOrders(Grid.mSubGrid,Grid.mSize,OrderToStartDDReduce);
+      Grid.GetGridStats();
      }
 
    static datetime	currentTime;
 	if (currentTime!=Time[0]) {
+      Grid.ShowGridOrdersOnChart(DashboardMaster, Grid.mOrders, 4);  //pass main orders to Dashboard Sub
 		Grid.ShowGridOrdersOnChart(DashboardSub, Grid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
-      Grid.ShowGridOrdersOnChart(DashboardMaster, Grid.mOrders, 3);  //pass main orders to Dashboard Sub
+
  
 		currentTime	=	Time[0];
 	}  
@@ -149,7 +151,8 @@ void AddGridDashboard(CDashboard &dashboard
 
 	
 	dashboard.AddRow(tableheadertxt, txtclr, txtfont, txtsize);
-	dashboard.AddRow("", txtclr, txtfont, txtsize-2);
+	dashboard.AddRow("", txtclr, txtfont, txtsize-2);              // row 2 is for display stats
+	dashboard.AddRow("", txtclr, txtfont, txtsize-2);              // row 3 is for display stats
 	dashboard.AddRow(colheadertxt, txtclr, txtfont, txtsize-2);
 	
    //--- Add 10+ blank row to get the space for the list
