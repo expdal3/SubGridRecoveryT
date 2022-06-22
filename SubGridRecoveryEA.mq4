@@ -16,7 +16,8 @@
 #include <Arrays/ArrayObj.mqh>
 #include <Blues/TradeInfoClass.mqh>
 
-extern  int    OrderToStartDDReduce =  7  ; // Order To Start DD Reduce
+extern  int    InpOrderToStartDDReduce =  6  ; // Order To Start DD Reduce
+extern  int    InpSubGridProfitToClose = 1   ;
 extern  string InpFileName          = "mastegridorders";
 CTradeInfo *tradeInfo;
 CGridMaster *Grid;
@@ -71,7 +72,7 @@ int OnInit()
    AcctEquity = AccountEquity();
    tradeInfo = new CTradeInfo();
    //--- Declare grid objects
-   Grid = new CGridMaster();                 // new Grid objects
+   Grid = new CGridMaster(InpMagicNumber);                 // init new Grid objects with the InpMagicNumber
    tiebreak=false;
    bool OrderOpenedChange=false;
 
@@ -112,15 +113,15 @@ void OnTick()
    STradeSum sum;
    GetSum(sum);
    if(IsTradeAllowed() && !IsTradeContextBusy()) OpenGridTrades(sum);   
-   
+
    //Collect data to array
    if(IsNewBar() )
      {
       Grid.GetOrdersOpened(Grid.mOrders,InpMagicNumber);           //pass data to Grid array that match magicnumber
-      Grid.GetSubGridOrders(Grid.mSubGrid,Grid.mSize,OrderToStartDDReduce);
+      Grid.GetSubGridOrders(Grid.mSubGrid,Grid.mSize,InpOrderToStartDDReduce);
       Grid.GetGridStats();
      }
-
+   Grid.CloseSubGrid(Grid.mSubGrid, InpSubGridProfitToClose);
    static datetime	currentTime;
 	if (currentTime!=Time[0]) {
       Grid.ShowGridOrdersOnChart(DashboardMaster, Grid.mOrders, 4);  //pass main orders to Dashboard Sub
