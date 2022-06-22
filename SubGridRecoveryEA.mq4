@@ -16,8 +16,8 @@
 #include <Arrays/ArrayObj.mqh>
 #include <Blues/TradeInfoClass.mqh>
 
-extern  int OrderToStartDDReduce =  7  ; // Order To Start DD Reduce
-
+extern  int    OrderToStartDDReduce =  7  ; // Order To Start DD Reduce
+extern  string InpFileName          = "mastegridorders";
 CTradeInfo *tradeInfo;
 CGridMaster *Grid;
 
@@ -78,7 +78,11 @@ int OnInit()
    //--- Loggings Init - Create 2 dashboard
    AddGridDashboard(DashboardMaster, "MasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
    AddGridDashboard(DashboardSub, "SubGridDB", SubGridHeaderTxt, ColHeaderTxt);
-   //--
+   
+   //---load data if any
+   if(LoadData(Grid, InpFileName))           //if succefully load data from file, re-fill master grid using the OrderTicket loaded
+      Grid.RefillGridWithSavedData(Grid.mOrders, Grid.mBinOrders);
+
 
    
 //---
@@ -96,7 +100,7 @@ void OnDeinit(const int reason)
       ||reason==REASON_REMOVE
       ||reason==REASON_TEMPLATE
       )
-      SaveData(Grid,"MasterGridOrders");
+      SaveData(Grid,InpFileName);
   }
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
@@ -119,7 +123,6 @@ void OnTick()
    static datetime	currentTime;
 	if (currentTime!=Time[0]) {
 		Grid.ShowGridOrdersOnChart(DashboardSub, Grid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
-      
       Grid.ShowGridOrdersOnChart(DashboardMaster, Grid.mOrders, 3);  //pass main orders to Dashboard Sub
  
 		currentTime	=	Time[0];
@@ -156,13 +159,57 @@ void AddGridDashboard(CDashboard &dashboard
 	  }
 }
 
+int LoadData(CGridMaster &grid, string inpfilename){
+  string terminal_data_path = TerminalInfoString(TERMINAL_DATA_PATH);
+  string filename;
+  if(IsTesting()) filename = terminal_data_path + "\\tester\\files\\"+inpfilename+".bin";
+  else filename = terminal_data_path + "\\MQL4\\Files\\"+inpfilename+".bin";
+  
+  string eaname;                    //hold the name of the EA from the file
+  string lastsavedtime;             //hold the last time the file was saved   
+  int    lastgridsize;                  //hold the last gridsize when the file was saved
+  filename = StringTrimRight(StringTrimLeft(inpfilename)); 
+  //--- check if previously saved bin file of the grid order is existed, if yes, load 
+   if(FileIsExist(filename))                                             // checkif file exit in the "Files" folder
+      {                                                                  // ||(IsTesting()=true && FileIsExist(inpfilename+"bin")) check if file exist in the tester folder if during testing                    
+      PrintFormat("Found file %s ", filename);
+       
+      int filehandle = FileOpen(filename, FILE_READ|FILE_BIN);
+      if(filehandle!=INVALID_HANDLE)
+     {
+     //--- load struct into the grid array
+     //eaname = FileReadString(filehandle,StringLen(__FILE__));
+     lastsavedtime = TimeToStr(FileReadInteger(filehandle), TIME_DATE|TIME_SECONDS);
+     lastgridsize = FileReadInteger(filehandle); 
+     PrintFormat("File metadata - LastSaveTime: %s | LastGridSizeKnown: %d", lastsavedtime, lastgridsize);
+     
+     //--- load the struct data into array
+     if(ArraySize(grid.mBinOrders)<lastgridsize)ArrayResize(grid.mBinOrders,lastgridsize);      //Resize grid array to hold incoming data
 
+     for(int i=0;i<lastgridsize;i++)
+      {          
+      FileReadStruct(
+          filehandle       // File handle
+          ,grid.mBinOrders[i]     // link to an object
+          //,sizeof(SOrderInfo_BinFormat)
+           );
+      PrintFormat("...Loading orders ticket %d with seq %d into struct succesfully", grid.mBinOrders[i].Ticket, grid.mBinOrders[i].SequenceNumber );
+     
+      }
+      FileClose(filehandle);
+      FileDelete(filename);
+      return(1);
+     } else { PrintFormat("Failed to open %s file, Error code = %d",filename,GetLastError());}
+     } else { PrintFormat("%s file does not exist, Error code = %d",filename,GetLastError());}
+  return(0);
+}
 
+//---
 void SaveData(CGridMaster &grid, string inpfilename){
    grid.ConvertToBinFormat();  // grid.mOrders, grid.mBinOrders transfer orders to Bin-writable format (remove all string variable)
    string terminal_data_path = TerminalInfoString(TERMINAL_DATA_PATH);
-   string filename = terminal_data_path + "\\MQL4\\Files\\"+inpfilename+".bin";
-   filename = StringTrimRight(StringTrimLeft(filename));
+   //string filename = terminal_data_path + "\\MQL4\\Files\\"+inpfilename+".bin";
+   string filename = StringTrimRight(StringTrimLeft(inpfilename));
    PrintFormat("the file name is %s", filename);               //"C:/Users/ducan/AppData/Roaming/MetaQuotes/Terminal/17B5FF217FE004B792EFA9D824B75EEC/MQL4/Files/SubGridRecoveryFiles/mastegridorders.bin";
 
    int filehandle = FileOpen(filename,FILE_WRITE|FILE_BIN);
@@ -171,12 +218,12 @@ void SaveData(CGridMaster &grid, string inpfilename){
      {
       //--- prepare the counter of the number of bytes
       uint counter=0;
-      FileWrite(filehandle,__FILE__);
-      FileWrite(filehandle,TimeCurrent());
-      FileWrite(filehandle,grid.mSize);
-
+      //FileWrite(filehandle,__FILE__);
+      FileWriteInteger(filehandle,(int)TimeCurrent());
+      FileWriteInteger(filehandle,grid.mSize);
+      PrintFormat("Current grid.mSize written to file is %d", grid.mSize );
            
-      for(int i=0;i<grid.mSize-1;i++)
+      for(int i=0;i<grid.mSize;i++)
         {         
          PrintFormat("...Writing order ticket %d to file",grid.mBinOrders[i].Ticket);
          uint byteswritten=FileWriteStruct(
@@ -203,14 +250,16 @@ void SaveData(CGridMaster &grid, string inpfilename){
      else { PrintFormat("Failed to open %s file, Error code = %d",filename,GetLastError());}
      
      //---for testing mode
+
+     if(IsTesting()){
      Print("EA is in Testing mode: ", (bool)IsTesting());
      Print("src file ",terminal_data_path+"\\tester\\files\\"+filename);
      Print("dst file ",terminal_data_path+"\\MQL4\\Files\\"+filename);
      string src_file_path = terminal_data_path+"\\tester\\files\\"+filename;
      string dst_file_path = terminal_data_path+"\\MQL4\\Files\\"+filename;
-     if(IsTesting()){
      if(!FileCopy(src_file_path,0,dst_file_path,FILE_REWRITE))PrintFormat("File copy failed! Error code=%d",GetLastError());
      }
      
 }
+
 
