@@ -96,7 +96,7 @@ void OnDeinit(const int reason)
       ||reason==REASON_REMOVE
       ||reason==REASON_TEMPLATE
       )
-      SaveData(Grid);
+      SaveData(Grid,"MasterGridOrders");
   }
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
@@ -155,11 +155,13 @@ void AddGridDashboard(CDashboard &dashboard
 	   dashboard.AddRow("", txtclr, txtfont, txtsize-2);
 	  }
 }
-void SaveData(CGridMaster &grid){
+
+
+
+void SaveData(CGridMaster &grid, string inpfilename){
    grid.ConvertToBinFormat();  // grid.mOrders, grid.mBinOrders transfer orders to Bin-writable format (remove all string variable)
    string terminal_data_path = TerminalInfoString(TERMINAL_DATA_PATH);
-   //string filename = terminal_data_path + "\\MQL4\\Files\\SubGridRecoveryFiles\\"+"mastegridorders.bin";
-   string filename = "mastegridorders.bin";
+   string filename = terminal_data_path + "\\MQL4\\Files\\"+inpfilename+".bin";
    filename = StringTrimRight(StringTrimLeft(filename));
    PrintFormat("the file name is %s", filename);               //"C:/Users/ducan/AppData/Roaming/MetaQuotes/Terminal/17B5FF217FE004B792EFA9D824B75EEC/MQL4/Files/SubGridRecoveryFiles/mastegridorders.bin";
 
@@ -167,7 +169,6 @@ void SaveData(CGridMaster &grid){
 
    if(filehandle!=INVALID_HANDLE)
      {
-      Print("File is valid");
       //--- prepare the counter of the number of bytes
       uint counter=0;
       FileWrite(filehandle,__FILE__);
@@ -202,13 +203,13 @@ void SaveData(CGridMaster &grid){
      else { PrintFormat("Failed to open %s file, Error code = %d",filename,GetLastError());}
      
      //---for testing mode
-     Print("Is tsting ", IsTesting());
+     Print("EA is in Testing mode: ", (bool)IsTesting());
      Print("src file ",terminal_data_path+"\\tester\\files\\"+filename);
-     Print("dst file ",terminal_data_path+"\\MQL4\\Files\\SubGridRecoveryFiles\\"+filename);
+     Print("dst file ",terminal_data_path+"\\MQL4\\Files\\"+filename);
      string src_file_path = terminal_data_path+"\\tester\\files\\"+filename;
-     string dst_file_path = terminal_data_path+"\\MQL4\\Files\\SubGridRecoveryFiles\\"+filename;
+     string dst_file_path = terminal_data_path+"\\MQL4\\Files\\"+filename;
      if(IsTesting()){
-     if(!FileCopy(src_file_path,0,dst_file_path,FILE_REWRITE))PrintFormat("Error read data. Error code=%d",GetLastError());
+     if(!FileCopy(src_file_path,0,dst_file_path,FILE_REWRITE))PrintFormat("File copy failed! Error code=%d",GetLastError());
      }
      
 }
