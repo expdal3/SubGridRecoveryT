@@ -16,6 +16,7 @@
 #include <Arrays/ArrayObj.mqh>
 #include <Blues/TradeInfoClass.mqh>
 
+
 extern  int    InpOrderToStartDDReduce =  6  ; // Order To Start DD Reduce
 extern  int    InpSubGridProfitToClose = 1   ;
 extern  string InpFileName          = "mastegridorders";
@@ -67,7 +68,7 @@ int _OrdersTotal = 0;
 //+------------------------------------------------------------------+
 int OnInit()
   {
-//---
+//--- 
    AcctBalance=AccountBalance();
    AcctEquity = AccountEquity();
    tradeInfo = new CTradeInfo();
