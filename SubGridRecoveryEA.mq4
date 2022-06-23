@@ -73,7 +73,8 @@ int OnInit()
    AcctEquity = AccountEquity();
    tradeInfo = new CTradeInfo();
    //--- Declare grid objects
-   Grid = new CGridMaster(InpMagicNumber);                 // init new Grid objects with the InpMagicNumber
+   Grid = new CGridMaster(InpType,InpMagicNumber);                 // init new Grid objects with the InpMagicNumber
+   //Print("Current order type is:", OrderTypeName (Grid.mOrderType));
    tiebreak=false;
    bool OrderOpenedChange=false;
 
@@ -121,16 +122,18 @@ void OnTick()
       Grid.GetOrdersOpened(Grid.mOrders,InpMagicNumber);           //pass data to Grid array that match magicnumber
       Grid.GetSubGridOrders(Grid.mSubGrid,Grid.mSize,InpOrderToStartDDReduce);
       Grid.GetGridStats();
-     }
-   Grid.CloseSubGrid(Grid.mSubGrid, InpSubGridProfitToClose);
-   static datetime	currentTime;
-	if (currentTime!=Time[0]) {
+      
       Grid.ShowGridOrdersOnChart(DashboardMaster, Grid.mOrders, 4);  //pass main orders to Dashboard Sub
 		Grid.ShowGridOrdersOnChart(DashboardSub, Grid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
+     }
+   if(Grid.mIsRecovering==true)Grid.CloseSubGrid(Grid.mSubGrid, InpSubGridProfitToClose);
+   //static datetime	currentTime;
+	//if (currentTime!=Time[0]) {
+
 
  
-		currentTime	=	Time[0];
-	}  
+	//	currentTime	=	Time[0];
+	//}  
   }
 
 
