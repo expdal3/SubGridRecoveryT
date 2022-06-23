@@ -9,14 +9,14 @@
 #property strict
 
 
-#include "include/GridTradeFunction.mqh"
+//#include "include/GridTradeFunction.mqh"
 #include "include/GridOrderManagement.mqh"
 #include "include/LogsFunction.mqh"
-#include <Arrays/ArrayInt.mqh>
-#include <Arrays/ArrayObj.mqh>
 #include <Blues/TradeInfoClass.mqh>
 
 extern  string  __0__                                                   = "_______ DD Rescue Settings __________";
+extern int                                      InpMagicNumber    =  1111;          //Magic number
+extern string                                   InpTradeComment   = __FILE__;       //Trade comment
 extern  int                                     InpLevelToStartRescue   = 4; // Order To Start DD Reduce
 extern  int                                     InpSubGridProfitToClose = 1;
 
@@ -94,8 +94,8 @@ int OnInit()
    BuyGrid = new CGridMaster(OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpMagicNumber,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
    SellGrid = new CGridMaster(OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpMagicNumber,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
    //Print("Current order type is:", OrderTypeName (Grid.mOrderType));
-   tiebreak=false;
-   bool OrderOpenedChange=false;
+   //tiebreak=false;
+   //bool OrderOpenedChange=false;
 
    //--- Loggings Init - Create 2 dashboard
    AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
@@ -137,10 +137,11 @@ void OnTick()
   {
 //---
    // Start martingale trades
-   STradeSum BuySum;
-   STradeSum SellSum;
-   GetSum(BuySum,OP_BUY);
-   GetSum(SellSum,OP_SELL);
+   //STradeSum BuySum;
+   //STradeSum SellSum;
+   //GetSum(BuySum,OP_BUY);
+   //GetSum(SellSum,OP_SELL);
+   /*
    if(IsTradeAllowed() && !IsTradeContextBusy()) 
       {
       switch(InpTradeMode)
@@ -160,7 +161,7 @@ void OnTick()
         }
       
       }  
-
+   */
    //Collect data to array
    if(IsNewBar() )
      {
