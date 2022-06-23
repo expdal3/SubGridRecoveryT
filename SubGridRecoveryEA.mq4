@@ -16,11 +16,11 @@
 #include <Arrays/ArrayObj.mqh>
 #include <Blues/TradeInfoClass.mqh>
 
-
+extern  string  __0__                                                   = "_______ DD Rescue Settings __________";
 extern  int                                     InpLevelToStartRescue   = 4; // Order To Start DD Reduce
 extern  int                                     InpSubGridProfitToClose = 1;
 extern  string                                  InpFileName             = "mastegridorders";
-extern  string  __1__                                                   = "_______ Advance Settings __________";
+extern  string  __1__                                                   = "_______ Advance Rescue Settings __________";
 extern  ENUM_BLUES_SUBGRID_MODE_SCHEME          InpRescueScheme         = _default_;
 CTradeInfo *tradeInfo;
 CGridMaster *Grid;
@@ -76,6 +76,7 @@ int OnInit()
    tradeInfo = new CTradeInfo();
    //--- Declare grid objects
    Grid = new CGridMaster(InpType,InpLevelToStartRescue,InpRescueScheme,InpMagicNumber,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
+
    //Print("Current order type is:", OrderTypeName (Grid.mOrderType));
    tiebreak=false;
    bool OrderOpenedChange=false;
