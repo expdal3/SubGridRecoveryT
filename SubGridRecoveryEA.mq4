@@ -17,9 +17,11 @@
 #include <Blues/TradeInfoClass.mqh>
 
 
-extern  int    InpOrderToStartDDReduce =  6  ; // Order To Start DD Reduce
-extern  int    InpSubGridProfitToClose = 1   ;
-extern  string InpFileName          = "mastegridorders";
+extern  int                                     InpLevelToStartRescue   = 4; // Order To Start DD Reduce
+extern  int                                     InpSubGridProfitToClose = 1;
+extern  string                                  InpFileName             = "mastegridorders";
+extern  string  __1__                                                   = "_______ Advance Settings __________";
+extern  ENUM_BLUES_SUBGRID_MODE_SCHEME          InpRescueScheme         = _default_;
 CTradeInfo *tradeInfo;
 CGridMaster *Grid;
 
@@ -73,7 +75,7 @@ int OnInit()
    AcctEquity = AccountEquity();
    tradeInfo = new CTradeInfo();
    //--- Declare grid objects
-   Grid = new CGridMaster(InpType,InpMagicNumber);                 // init new Grid objects with the InpMagicNumber
+   Grid = new CGridMaster(InpType,InpLevelToStartRescue,InpRescueScheme,InpMagicNumber,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
    //Print("Current order type is:", OrderTypeName (Grid.mOrderType));
    tiebreak=false;
    bool OrderOpenedChange=false;
@@ -119,8 +121,8 @@ void OnTick()
    //Collect data to array
    if(IsNewBar() )
      {
-      Grid.GetOrdersOpened(Grid.mOrders,InpMagicNumber);           //pass data to Grid array that match magicnumber
-      Grid.GetSubGridOrders(Grid.mSubGrid,Grid.mSize,InpOrderToStartDDReduce);
+      Grid.GetOrdersOpened(Grid.mOrders);           //pass data to Grid array that match magicnumber
+      Grid.GetSubGridOrders();
       Grid.GetGridStats();
       
       Grid.ShowGridOrdersOnChart(DashboardMaster, Grid.mOrders, 4);  //pass main orders to Dashboard Sub
