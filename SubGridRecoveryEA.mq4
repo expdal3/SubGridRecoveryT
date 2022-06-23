@@ -19,6 +19,7 @@ extern int                                      InpMagicNumber    =  1111;      
 extern string                                   InpTradeComment   = __FILE__;       //Trade comment
 extern  int                                     InpLevelToStartRescue   = 4; // Order To Start DD Reduce
 extern  int                                     InpSubGridProfitToClose = 1;
+extern  bool                                    InpShowPanel = false;
 
 extern  string  __1__                                                   = "_______ Advance Rescue Settings __________";
 extern  ENUM_BLUES_SUBGRID_MODE_SCHEME          InpRescueScheme         = _default_;
@@ -98,12 +99,19 @@ int OnInit()
    //bool OrderOpenedChange=false;
 
    //--- Loggings Init - Create 2 dashboard
+   if(InpShowPanel==true)
+   {
    AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
    AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt);
 
    AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
    AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
-   
+   }else{
+   BuyDashboardMaster.DeleteAll();
+   SellDashboardMaster.DeleteAll();
+   BuyDashboardSub.DeleteAll();
+   SellDashboardSub.DeleteAll();
+   }
    //---load data if any
    //if(LoadData(BuyGrid, InpFileName))           //if succefully load data from file, re-fill master grid using the OrderTicket loaded
    //   BuyGrid.RefillGridWithSavedData(BuyGrid.mOrders, BuyGrid.mBinOrders);
@@ -129,6 +137,7 @@ void OnDeinit(const int reason)
       )
       SaveData(BuyGrid,inpBuyFileName);
       SaveData(SellGrid,inpSellFileName);
+      
   }
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
@@ -170,19 +179,23 @@ void OnTick()
       BuyGrid.GetOrdersOpened(BuyGrid.mOrders);           //pass data to Grid array that match magicnumber
       BuyGrid.GetSubGridOrders();
       BuyGrid.GetGridStats();
-      
-      BuyGrid.ShowGridOrdersOnChart(BuyDashboardMaster, BuyGrid.mOrders, 4);  //pass main orders to Dashboard Sub
-		BuyGrid.ShowGridOrdersOnChart(BuyDashboardSub, BuyGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
+      if(InpShowPanel==true)
+        {
+         BuyGrid.ShowGridOrdersOnChart(BuyDashboardMaster, BuyGrid.mOrders, 4);  //pass main orders to Dashboard Sub
+		   BuyGrid.ShowGridOrdersOnChart(BuyDashboardSub, BuyGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
+        }
+
      
      //---SELL GRID
      
       SellGrid.GetOrdersOpened(SellGrid.mOrders);           //pass data to Grid array that match magicnumber
       SellGrid.GetSubGridOrders();
       SellGrid.GetGridStats();
-      
+      if(InpShowPanel==true)
+        {
       SellGrid.ShowGridOrdersOnChart(SellDashboardMaster, SellGrid.mOrders, 4);  //pass main orders to Dashboard Sub
 		SellGrid.ShowGridOrdersOnChart(SellDashboardSub, SellGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
-     }
+     }}
    if(BuyGrid.mIsRecovering==true)BuyGrid.CloseSubGrid(BuyGrid.mSubGrid, InpSubGridProfitToClose);
    if(SellGrid.mIsRecovering==true)SellGrid.CloseSubGrid(SellGrid.mSubGrid, InpSubGridProfitToClose);
 
