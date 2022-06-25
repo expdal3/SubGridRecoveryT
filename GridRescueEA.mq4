@@ -195,11 +195,17 @@ void OnTick()
      }
      
    //Get the latest order info
-   BuyGrid.GetOrdersOpened();           //pass data to Grid array that match magicnumber BuyGrid.mOrders
+   if(_OrdersTotal!=OrdersTotal())
+     {
+      _OrdersTotal = OrdersTotal();
+      BuyGrid.GetOrdersOpened();           //pass data to Grid array that match magicnumber BuyGrid.mOrders
+      SellGrid.GetOrdersOpened();           //pass data to Grid array that match magicnumber SellGrid.mOrders
+     }
+
    BuyGrid.GetSubGridOrders();
    BuyGrid.GetGridStats();
 
-   SellGrid.GetOrdersOpened();           //pass data to Grid array that match magicnumber SellGrid.mOrders
+
    SellGrid.GetSubGridOrders();
    SellGrid.GetGridStats();
 
