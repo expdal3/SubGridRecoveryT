@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright           "Copyright 2022, BlueStone."
 #property link                "https://www.mql5.com"
-#property version             "1.07"
+#property version             "1.08"
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
@@ -15,6 +15,7 @@
 #include "include/LogsFunction.mqh"
 #include <Blues/TradeInfoClass.mqh>
 #include <Blues/Credentials.mqh>
+
 
 extern bool                                     InpOpenNewGridTrade   = false; // Open test grid trade?
 
@@ -169,22 +170,22 @@ void OnTick()
    if(InpOpenNewGridTrade)
      {
 
-         GetSum(BuySum,OP_BUY);
-         GetSum(SellSum,OP_SELL);
+         GetSum(BuySum,OP_BUY, InpMagicNumber);
+         GetSum(SellSum,OP_SELL, InpMagicNumber);
    
    if(IsTradeAllowed() && !IsTradeContextBusy() && IsTesting())         //Only allow open new test trading order if in demo account 
       {
       switch(InpTradeMode)
         {
          case  Buy_and_Sell:
-            OpenGridTrades(BuySum,OP_BUY); 
-            OpenGridTrades(SellSum,OP_SELL); 
+            OpenGridTrades(BuySum,OP_BUY, InpMagicNumber, InpTradeComment); 
+            OpenGridTrades(SellSum,OP_SELL, InpMagicNumber, InpTradeComment); 
            break;
          case  BuyOnly:
-            OpenGridTrades(BuySum,OP_BUY); 
+            OpenGridTrades(BuySum,OP_BUY, InpMagicNumber, InpTradeComment); 
            break;
          case  SellOnly:
-            OpenGridTrades(SellSum,OP_SELL); 
+            OpenGridTrades(SellSum,OP_SELL, InpMagicNumber, InpTradeComment); 
            break;
          default:
            break;
@@ -192,30 +193,37 @@ void OnTick()
       
       }   
      }
+     
+   //Get the latest order info
+   BuyGrid.GetOrdersOpened();           //pass data to Grid array that match magicnumber BuyGrid.mOrders
+   BuyGrid.GetSubGridOrders();
+   BuyGrid.GetGridStats();
 
+   SellGrid.GetOrdersOpened();           //pass data to Grid array that match magicnumber SellGrid.mOrders
+   SellGrid.GetSubGridOrders();
+   SellGrid.GetGridStats();
+
+      
    //Collect data to array
    if(IsNewBar() )
      {
      //---BUY GRID
-     
-      BuyGrid.GetOrdersOpened(BuyGrid.mOrders);           //pass data to Grid array that match magicnumber
-      BuyGrid.GetSubGridOrders();
-      BuyGrid.GetGridStats();
+      //Print(__FUNCTION__,"NUmber of opned buy order is: ", BuyGrid.CountOrder(TYPE,BuyGrid.mOrderType,MODE_TRADES));
+
+		   
       if(InpShowPanel==true)
         {
-         BuyGrid.ShowGridOrdersOnChart(BuyDashboardMaster, BuyGrid.mOrders, 4);  //pass main orders to Dashboard Sub
+         //Print("BuyGrid ArraySize is ", ArraySize(BuyGrid.mOrders) );
+         BuyGrid.ShowGridOrdersOnChart(BuyDashboardMaster, 4);  //pass main orders to Dashboard Sub
 		   BuyGrid.ShowGridOrdersOnChart(BuyDashboardSub, BuyGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
         }
 
      
      //---SELL GRID
-     
-      SellGrid.GetOrdersOpened(SellGrid.mOrders);           //pass data to Grid array that match magicnumber
-      SellGrid.GetSubGridOrders();
-      SellGrid.GetGridStats();
+      //Print(__FUNCTION__,"NUmber of opned sell order is: ", BuyGrid.CountOrder(TYPE,SellGrid.mOrderType,MODE_TRADES));
       if(InpShowPanel==true)
         {
-      SellGrid.ShowGridOrdersOnChart(SellDashboardMaster, SellGrid.mOrders, 4);  //pass main orders to Dashboard Sub
+      SellGrid.ShowGridOrdersOnChart(SellDashboardMaster, 4);  //pass main orders to Dashboard Sub
 		SellGrid.ShowGridOrdersOnChart(SellDashboardSub, SellGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
      }}
    if(BuyGrid.mIsRecovering==true)BuyGrid.CloseSubGrid(BuyGrid.mSubGrid, InpSubGridProfitToClose);
