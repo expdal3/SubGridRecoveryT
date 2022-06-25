@@ -3,26 +3,31 @@
 //|                                       Copyright 2022, BlueStone. |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2022, BlueStone."
-#property link      "https://www.mql5.com"
-#property version   "1.00"
+#property copyright           "Copyright 2022, BlueStone."
+#property link                "https://www.mql5.com"
+#property version             "1.07"
+#property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
 
-//#include "include/GridTradeFunction.mqh"
+#include "include/GridTradeFunction.mqh"
 #include "include/GridOrderManagement.mqh"
 #include "include/LogsFunction.mqh"
 #include <Blues/TradeInfoClass.mqh>
+#include <Blues/Credentials.mqh>
+
+extern bool                                     InpOpenNewGridTrade   = false; // Open test grid trade?
+
 
 extern  string  __0__                                                   = "_______ DD Rescue Settings __________";
 extern int                                      InpMagicNumber    =  1111;          //Magic number
 extern string                                   InpTradeComment   = __FILE__;       //Trade comment
 extern  int                                     InpLevelToStartRescue   = 4; // Order To Start DD Reduce
-extern  int                                     InpSubGridProfitToClose = 1;
-extern  bool                                    InpShowPanel = false;
+extern  int                                     InpSubGridProfitToClose = 1; // Sub-grid's Profit to close 
+extern  bool                                    InpShowPanel = false;        // Show panel
 
 extern  string  __1__                                                   = "_______ Advance Rescue Settings __________";
-extern  ENUM_BLUES_SUBGRID_MODE_SCHEME          InpRescueScheme         = _default_;
+extern  ENUM_BLUES_SUBGRID_MODE_SCHEME          InpRescueScheme         = _default_;   // Rescue Scheme
 
 
 CTradeInfo *tradeInfo;
@@ -57,9 +62,8 @@ int TotalRowsSize = 10;
 int HeaderRowsToSkip = 3;
 
 //---input for file saving
-string                                          inpBuyFileName          = __FILE__ + "BuyGrid";
-string                                          inpSellFileName          = __FILE__ + "SellGrid";
-
+string                                          inpBuyFileName        = __FILE__ + "BuyGrid";
+string                                          inpSellFileName       = __FILE__ + "SellGrid";
 
 /*
 //---Loggings
@@ -88,6 +92,13 @@ int _OrdersTotal = 0;
 int OnInit()
   {
 //--- 
+
+   if(inpUnlockPass!=pass)
+     {
+      if (MessageBox("Please enter pass to continue","Password needed!",MB_OK)==1);
+      ExpertRemove();
+
+   } else{
    AcctBalance=AccountBalance();
    AcctEquity = AccountEquity();
    tradeInfo = new CTradeInfo();
@@ -101,11 +112,15 @@ int OnInit()
    //--- Loggings Init - Create 2 dashboard
    if(InpShowPanel==true)
    {
-   AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
-   AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt);
-
-   AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
-   AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+   if(InpTradeMode==Buy_and_Sell || InpTradeMode==BuyOnly){   
+      AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
+      AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+      }
+   
+   if(InpTradeMode==Buy_and_Sell || InpTradeMode==SellOnly){
+      AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
+      AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+   }
    }else{
    BuyDashboardMaster.DeleteAll();
    SellDashboardMaster.DeleteAll();
@@ -119,6 +134,9 @@ int OnInit()
       //---load data if any
    //if(LoadData(SellGrid, InpFileName))           //if succefully load data from file, re-fill master grid using the OrderTicket loaded
    //   SellGrid.RefillGridWithSavedData(SellGrid.mOrders, SellGrid.mBinOrders);   
+
+   
+   }
    
 //---
    return(INIT_SUCCEEDED);
@@ -145,13 +163,16 @@ void OnDeinit(const int reason)
 void OnTick()
   {
 //---
+   STradeSum BuySum;
+   STradeSum SellSum;
    // Start martingale trades
-   //STradeSum BuySum;
-   //STradeSum SellSum;
-   //GetSum(BuySum,OP_BUY);
-   //GetSum(SellSum,OP_SELL);
-   /*
-   if(IsTradeAllowed() && !IsTradeContextBusy()) 
+   if(InpOpenNewGridTrade)
+     {
+
+         GetSum(BuySum,OP_BUY);
+         GetSum(SellSum,OP_SELL);
+   
+   if(IsTradeAllowed() && !IsTradeContextBusy() && IsTesting())         //Only allow open new test trading order if in demo account 
       {
       switch(InpTradeMode)
         {
@@ -169,8 +190,9 @@ void OnTick()
            break;
         }
       
-      }  
-   */
+      }   
+     }
+
    //Collect data to array
    if(IsNewBar() )
      {
