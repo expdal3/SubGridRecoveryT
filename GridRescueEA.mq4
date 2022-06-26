@@ -220,7 +220,12 @@ void OnTick()
       SellGrid.GetSubGridOrders();
       SellGrid.GetGridStats();
 
-      
+      if(BuyGrid.mIsRecovering==true){
+         if(BuyGrid.CloseSubGrid(BuyGrid.mSubGrid, InpSubGridProfitToClose)){BuyGrid.mIteration++; BuyGrid.mRescueCount++;
+         }}
+      if(SellGrid.mIsRecovering==true){
+         if(   SellGrid.CloseSubGrid(SellGrid.mSubGrid, InpSubGridProfitToClose)){SellGrid.mIteration++; SellGrid.mRescueCount++;
+         }}
    //Collect data to array
    if(IsNewBar() )
      {
@@ -242,8 +247,7 @@ void OnTick()
 		SellGrid.ShowGridOrdersOnChart(SellDashboardSub, SellGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
          }
      }
-   if(BuyGrid.mIsRecovering==true)BuyGrid.CloseSubGrid(BuyGrid.mSubGrid, InpSubGridProfitToClose);
-   if(SellGrid.mIsRecovering==true)SellGrid.CloseSubGrid(SellGrid.mSubGrid, InpSubGridProfitToClose);
+
 
   }
 
