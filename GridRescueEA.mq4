@@ -9,13 +9,13 @@
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
-//#define  TESTMODE X       //If this not defined then "include" the GridTradeFunction, esle skip
+//#define  PRODMODE X       //If this not defined then "include" the GridTradeFunction, esle skip
 
 //+------------------------------------------------------------------+
 //|   EXTERNAL INPUTS                                                |
 //+------------------------------------------------------------------+
 
-#ifndef	TESTMODE 
+#ifndef	PRODMODE 
    #include "include/GridTradeFunction.mqh"
    extern bool                                  InpOpenNewGridTrade   = false; // Open test grid trade?                         
 #endif
@@ -31,11 +31,13 @@ extern string                                   InpTradeComment         = __FILE
 extern  int                                     InpLevelToStartRescue   = 4;        // Order To Start Rescue
 extern  int                                     InpSubGridProfitToClose = 1;        // Sub-grid's Profit to close 
 extern  bool                                    InpShowPanel            = false;               // Show master and sub grid panel
+extern  int                                     InpPanelFontSize        = 10;
 
 extern  string  __1__                                                   = "____ ADVANCED RESCUE OPTIONS_______";
 extern  string  __1a__                                                  = "RescueScheme base on number of grid orders:         ";
 extern  string  __1b__                                                  = "  (*) _default_: <=4 is 2Node, 5-10 is 3Node        ";
 extern  ENUM_BLUES_SUBGRID_MODE_SCHEME          InpRescueScheme         = _default_;   // Rescue Scheme
+
 
 //+------------------------------------------------------------------+
 //|   INTERNAL INPUTS                                                |
@@ -48,7 +50,7 @@ CGridMaster *SellGrid;
 //---inputs for dashboard logggings
 CDashboard BuyDashboardMaster("BuyMasterGridDB"
 	                              , CORNER_RIGHT_UPPER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
-	                              , 750                         // X Distance from margin
+	                              , 400                         // X Distance from margin
 	                              , 15);                      // Y Distance from margin 
    
 CDashboard BuyDashboardSub("BuySubGridDB"
@@ -58,7 +60,7 @@ CDashboard BuyDashboardSub("BuySubGridDB"
 
 CDashboard SellDashboardMaster("SellMasterGridDB"
 	                              , CORNER_RIGHT_LOWER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
-	                              , 750                         // X Distance from margin
+	                              , 400                         // X Distance from margin
 	                              , 15);                      // Y Distance from margin 
    
 CDashboard SellDashboardSub("SellSubGridDB"
@@ -67,10 +69,10 @@ CDashboard SellDashboardSub("SellSubGridDB"
 	                              , 15);                      // Y Distance from margin 
 
 
-string                                       MasterGridHeaderTxt     = "Master Grid orders                                           " ;
-string                                       SubGridHeaderTxt        = "Sub Grid orders                                             ";
-string                                       ColHeaderTxt            =   "Ticket   Symbol   Type   LotSize   OpenPrice   Profit           "  ;
-int                                          TotalRowsSize           = 10;
+string                                       MasterGridHeaderTxt     = "Master Grid orders                                " ;
+string                                       SubGridHeaderTxt        = "Sub Grid orders                                   ";
+string                                       ColHeaderTxt            = "Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "  ;
+int                                          TotalRowsSize           = 15;
 int                                          HeaderRowsToSkip        = 3;
 
 //---input for file saving
@@ -105,17 +107,17 @@ int OnInit()
    //bool OrderOpenedChange=false;
 
    //--- Loggings Init - Create 2 dashboard
-   #ifndef	TESTMODE                         // #if in test mode
+   #ifndef	PRODMODE                         // #if in test mode
       if(InpShowPanel==true)
       {
       if(InpTradeMode==Buy_and_Sell || InpTradeMode==BuyOnly){   
-         AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
-         AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+         AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", "BUY "+MasterGridHeaderTxt, ColHeaderTxt, InpPanelFontSize);
+         AddGridDashboard(BuyDashboardSub, "BuySubGridDB", "BUY "+SubGridHeaderTxt, ColHeaderTxt, InpPanelFontSize);
          }
       
       if(InpTradeMode==Buy_and_Sell || InpTradeMode==SellOnly){
-         AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
-         AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+         AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", "SELL "+ MasterGridHeaderTxt, ColHeaderTxt, InpPanelFontSize);
+         AddGridDashboard(SellDashboardSub, "SellSubGridDB", "SELL "+SubGridHeaderTxt, ColHeaderTxt, InpPanelFontSize);
          }
       }else{
       BuyDashboardMaster.DeleteAll();
@@ -173,7 +175,7 @@ void OnDeinit(const int reason)
 void OnTick()
   {
 //---
-   #ifndef TESTMODE
+   #ifndef PRODMODE
    STradeSum BuySum;
    STradeSum SellSum;
    // Start martingale trades
@@ -253,13 +255,14 @@ void AddGridDashboard(CDashboard &dashboard
                      , string dashboardObjName
                      , string tableheadertxt
                      , string colheadertxt
+                     , int txtsize  =  9
                      , int rows = 10
                      , int corner = CORNER_RIGHT_UPPER
                      , int xdist = 400
                      , int ydist =  15
                      , color txtclr =  clrWhite
-                     , string txtfont  =  "Verdana"
-                     , int txtsize  =  10
+                     , string txtfont  =  "Arial Narrow"
+
                      ){
    //---
 
@@ -368,7 +371,7 @@ void SaveData(CGridMaster &grid, string inpfilename){
      
      //---for testing mode
 
-     #ifndef TESTMODE
+     #ifndef PRODMODE
      if(IsTesting()){
      Print("EA is in Testing mode: ", (bool)IsTesting());
      Print("src file ",terminal_data_path+"\\tester\\files\\"+filename);
