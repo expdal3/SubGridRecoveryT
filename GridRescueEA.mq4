@@ -5,39 +5,47 @@
 //+------------------------------------------------------------------+
 #property copyright           "Copyright 2022, BlueStone."
 #property link                "https://www.mql5.com"
-#property version             "2.01"
+#property version             "2.02"
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
 //#define  TESTMODE X       //If this not defined then "include" the GridTradeFunction, esle skip
 
+//+------------------------------------------------------------------+
+//|   EXTERNAL INPUTS                                                |
+//+------------------------------------------------------------------+
+
 #ifndef	TESTMODE 
-   #include "include/GridTradeFunction.mqh"                         
-#endif 
+   #include "include/GridTradeFunction.mqh"
+   extern bool                                  InpOpenNewGridTrade   = false; // Open test grid trade?                         
+#endif
+ 
 #include "include/GridOrderManagement.mqh"
 #include "include/LogsFunction.mqh"
 #include <Blues/TradeInfoClass.mqh>
 #include <Blues/Credentials.mqh>
 
+extern  string  __0__                                                   = "____ MAIN DRAWDOWN RESCUE SETTINGS _______";
+extern int                                      InpMagicNumber          =  1111;          //EA Magic number to rescue
+extern string                                   InpTradeComment         = __FILE__;       //EA Trade comment to rescue
+extern  int                                     InpLevelToStartRescue   = 4;        // Order To Start Rescue
+extern  int                                     InpSubGridProfitToClose = 1;        // Sub-grid's Profit to close 
+extern  bool                                    InpShowPanel            = false;               // Show master and sub grid panel
 
-extern bool                                     InpOpenNewGridTrade   = false; // Open test grid trade?
-
-
-extern  string  __0__                                                   = "_______ DD Rescue Settings __________";
-extern int                                      InpMagicNumber    =  1111;          //Magic number
-extern string                                   InpTradeComment   = __FILE__;       //Trade comment
-extern  int                                     InpLevelToStartRescue   = 4; // Order To Start DD Reduce
-extern  int                                     InpSubGridProfitToClose = 1; // Sub-grid's Profit to close 
-extern  bool                                    InpShowPanel = false;        // Show panel
-
-extern  string  __1__                                                   = "_______ Advance Rescue Settings __________";
+extern  string  __1__                                                   = "____ ADVANCED RESCUE OPTIONS_______";
+extern  string  __1a__                                                  = "RescueScheme base on number of grid orders:         ";
+extern  string  __1b__                                                  = "  (*) _default_: <=4 is 2Node, 5-10 is 3Node        ";
 extern  ENUM_BLUES_SUBGRID_MODE_SCHEME          InpRescueScheme         = _default_;   // Rescue Scheme
 
+//+------------------------------------------------------------------+
+//|   INTERNAL INPUTS                                                |
+//+------------------------------------------------------------------+
 
+//---init object class
 CTradeInfo *tradeInfo;
 CGridMaster *BuyGrid;
 CGridMaster *SellGrid;
-//---declare dashboard logggings
+//---inputs for dashboard logggings
 CDashboard BuyDashboardMaster("BuyMasterGridDB"
 	                              , CORNER_RIGHT_UPPER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
 	                              , 750                         // X Distance from margin
@@ -59,35 +67,18 @@ CDashboard SellDashboardSub("SellSubGridDB"
 	                              , 15);                      // Y Distance from margin 
 
 
-string MasterGridHeaderTxt = "Master Grid orders                                           " ;
-string SubGridHeaderTxt = "Sub Grid orders                                             ";
-string ColHeaderTxt =   "Ticket   Symbol   Type   LotSize   OpenPrice   Profit           "  ;
-int TotalRowsSize = 10;
-int HeaderRowsToSkip = 3;
+string                                       MasterGridHeaderTxt     = "Master Grid orders                                           " ;
+string                                       SubGridHeaderTxt        = "Sub Grid orders                                             ";
+string                                       ColHeaderTxt            =   "Ticket   Symbol   Type   LotSize   OpenPrice   Profit           "  ;
+int                                          TotalRowsSize           = 10;
+int                                          HeaderRowsToSkip        = 3;
 
 //---input for file saving
-string                                          inpBuyFileName        = __FILE__ + "BuyGrid";
-string                                          inpSellFileName       = __FILE__ + "SellGrid";
+string                                       inpBuyFileName          = __FILE__ + "BuyGrid";
+string                                       inpSellFileName         = __FILE__ + "SellGrid";
 
-/*
-//---Loggings
-#include		<Orchard\Dialog\Dashboard.mqh>
-CDashboard	*Dashboard;
-string GridHeaderTxt = "Master Grid orders                                  " ;
-string ColHeaderTxt =   "Ticket   Symbol   Type   LotSize   OpenPrice   Profit "  ;
-
-int DashboardRowsToSkip=3;
-*/
-
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-
-//internal parameters
-int historyTotal = OrdersHistoryTotal();
-int openTotal = OrdersTotal();
+//---other internal parameters
 double AcctBalance,   AcctEquity;
-int gridSize;
 int _OrdersTotal = 0;
 
 //+------------------------------------------------------------------+
@@ -114,38 +105,38 @@ int OnInit()
    //bool OrderOpenedChange=false;
 
    //--- Loggings Init - Create 2 dashboard
-   #ifndef	TESTMODE 
-   
-   if(InpShowPanel==true)
-   {
-   if(InpTradeMode==Buy_and_Sell || InpTradeMode==BuyOnly){   
-      AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
-      AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt);
-      }
-   
-   if(InpTradeMode==Buy_and_Sell || InpTradeMode==SellOnly){
-      AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
-      AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
-   }
-   }else{
-   BuyDashboardMaster.DeleteAll();
-   SellDashboardMaster.DeleteAll();
-   BuyDashboardSub.DeleteAll();
-   SellDashboardSub.DeleteAll();
-   }
-   #else
-     if(InpShowPanel==true)
+   #ifndef	TESTMODE                         // #if in test mode
+      if(InpShowPanel==true)
       {
-      AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
-      AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt);
-      AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
-      AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
-   }else{
-   BuyDashboardMaster.DeleteAll();
-   SellDashboardMaster.DeleteAll();
-   BuyDashboardSub.DeleteAll();
-   SellDashboardSub.DeleteAll();
-   }
+      if(InpTradeMode==Buy_and_Sell || InpTradeMode==BuyOnly){   
+         AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
+         AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+         }
+      
+      if(InpTradeMode==Buy_and_Sell || InpTradeMode==SellOnly){
+         AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
+         AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+         }
+      }else{
+      BuyDashboardMaster.DeleteAll();
+      SellDashboardMaster.DeleteAll();
+      BuyDashboardSub.DeleteAll();
+      SellDashboardSub.DeleteAll();
+      }
+   #else                                     // #if not in test mode
+      if(InpShowPanel==true)
+         {
+         AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
+         AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+         AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
+         AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+      }else{
+         BuyDashboardMaster.DeleteAll();
+         SellDashboardMaster.DeleteAll();
+         BuyDashboardSub.DeleteAll();
+         SellDashboardSub.DeleteAll();
+      }
+   #endif
    //---load data if any
    //if(LoadData(BuyGrid, InpFileName))           //if succefully load data from file, re-fill master grid using the OrderTicket loaded
    //   BuyGrid.RefillGridWithSavedData(BuyGrid.mOrders, BuyGrid.mBinOrders);
@@ -222,12 +213,10 @@ void OnTick()
       SellGrid.GetOrdersOpened();           //pass data to Grid array that match magicnumber SellGrid.mOrders
      }
 
-   BuyGrid.GetSubGridOrders();
-   BuyGrid.GetGridStats();
-
-
-   SellGrid.GetSubGridOrders();
-   SellGrid.GetGridStats();
+      BuyGrid.GetSubGridOrders();
+      BuyGrid.GetGridStats();
+      SellGrid.GetSubGridOrders();
+      SellGrid.GetGridStats();
 
       
    //Collect data to array
@@ -235,8 +224,7 @@ void OnTick()
      {
      //---BUY GRID
       //Print(__FUNCTION__,"NUmber of opned buy order is: ", BuyGrid.CountOrder(TYPE,BuyGrid.mOrderType,MODE_TRADES));
-
-		   
+   
       if(InpShowPanel==true)
         {
          //Print("BuyGrid ArraySize is ", ArraySize(BuyGrid.mOrders) );
@@ -244,14 +232,14 @@ void OnTick()
 		   BuyGrid.ShowGridOrdersOnChart(BuyDashboardSub, BuyGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
         }
 
-     
      //---SELL GRID
       //Print(__FUNCTION__,"NUmber of opned sell order is: ", BuyGrid.CountOrder(TYPE,SellGrid.mOrderType,MODE_TRADES));
       if(InpShowPanel==true)
         {
       SellGrid.ShowGridOrdersOnChart(SellDashboardMaster, 4);  //pass main orders to Dashboard Sub
 		SellGrid.ShowGridOrdersOnChart(SellDashboardSub, SellGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
-     }}
+         }
+     }
    if(BuyGrid.mIsRecovering==true)BuyGrid.CloseSubGrid(BuyGrid.mSubGrid, InpSubGridProfitToClose);
    if(SellGrid.mIsRecovering==true)SellGrid.CloseSubGrid(SellGrid.mSubGrid, InpSubGridProfitToClose);
 
@@ -296,7 +284,7 @@ int LoadData(CGridMaster &grid, string inpfilename){
   
   string eaname;                    //hold the name of the EA from the file
   string lastsavedtime;             //hold the last time the file was saved   
-  int    lastgridsize;                  //hold the last gridsize when the file was saved
+  int    lastgridsize;              //hold the last gridsize when the file was saved
   filename = StringTrimRight(StringTrimLeft(inpfilename)); 
   //--- check if previously saved bin file of the grid order is existed, if yes, load 
    if(FileIsExist(filename))                                             // checkif file exit in the "Files" folder
@@ -380,6 +368,7 @@ void SaveData(CGridMaster &grid, string inpfilename){
      
      //---for testing mode
 
+     #ifndef TESTMODE
      if(IsTesting()){
      Print("EA is in Testing mode: ", (bool)IsTesting());
      Print("src file ",terminal_data_path+"\\tester\\files\\"+filename);
@@ -388,6 +377,7 @@ void SaveData(CGridMaster &grid, string inpfilename){
      string dst_file_path = terminal_data_path+"\\MQL4\\Files\\"+filename;
      if(!FileCopy(src_file_path,0,dst_file_path,FILE_REWRITE))PrintFormat("File copy failed! Error code=%d",GetLastError());
      }
+     #endif 
      
 }
 
