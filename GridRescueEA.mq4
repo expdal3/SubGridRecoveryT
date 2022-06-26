@@ -25,19 +25,19 @@
 #include <Blues/TradeInfoClass.mqh>
 #include <Blues/Credentials.mqh>
 
-extern  string  __0__                                                   = "____ MAIN DRAWDOWN RESCUE SETTINGS _______";
-extern int                                      InpMagicNumber          =  1111;          //EA Magic number to rescue
-extern string                                   InpTradeComment         = __FILE__;       //EA Trade comment to rescue
-extern  int                                     InpLevelToStartRescue   = 4;        // Order To Start Rescue
-extern  int                                     InpSubGridProfitToClose = 1;        // Sub-grid's Profit to close 
-extern  bool                                    InpShowPanel            = false;               // Show master and sub grid panel
-extern  int                                     InpPanelFontSize        = 10;
+extern  string  __0__                                                      = "____ MAIN DRAWDOWN RESCUE SETTINGS _______";
+extern int                              InpMagicNumber                     =  1111;          //EA Magic number to rescue
+extern string                           InpTradeComment                    = __FILE__;       //EA Trade comment to rescue
+extern  int                             InpLevelToStartRescue              = 4;        // Order To Start Rescue
+extern  double                          InpSubGridProfitToClose            = 1;        // Sub-grid's Profit to close 
+extern  bool                            InpShowPanel                       = false;               // Show master and sub grid panel
+extern  int                             InpPanelFontSize                   = 10;
 
-extern  string  __1__                                                   = "____ ADVANCED RESCUE OPTIONS_______";
-extern  string  __1a__                                                  = "RescueScheme base on number of grid orders:         ";
-extern  string  __1b__                                                  = "  (*) _default_: <=4 is 2Node, 5-10 is 3Node        ";
-extern  ENUM_BLUES_SUBGRID_MODE_SCHEME          InpRescueScheme         = _default_;   // Rescue Scheme
-
+extern  string  __1__                                                      = "____ ADVANCED RESCUE OPTIONS_______";
+extern  string  __1a__                                                     = "RescueScheme base on number of grid orders:         ";
+extern  string  __1b__                                                     = "  (*) _default_: <=4 is 2Node, 5-10 is 3Node        ";
+extern  ENUM_BLUES_SUBGRID_MODE_SCHEME  InpRescueScheme                    = _default_;   // Rescue Scheme
+extern  string                          InpIterationModeAndProfitToCloseStr= "2:1.25, 3:2.5, 2:2.0, 3:2.0, 3:1, 3:1, 3:0.5, 3:0.5" ;   // Iteration Mode and ProfitToClose (If select RescueScheme = _Iteration_based_)
 
 //+------------------------------------------------------------------+
 //|   INTERNAL INPUTS                                                |
@@ -100,8 +100,8 @@ int OnInit()
    AcctEquity = AccountEquity();
    tradeInfo = new CTradeInfo();
    //--- Declare grid objects
-   BuyGrid = new CGridMaster(OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpMagicNumber,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
-   SellGrid = new CGridMaster(OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpMagicNumber,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
+   BuyGrid = new CGridMaster(OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpMagicNumber,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
+   SellGrid = new CGridMaster(OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpMagicNumber,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
    //Print("Current order type is:", OrderTypeName (Grid.mOrderType));
    //tiebreak=false;
    //bool OrderOpenedChange=false;
@@ -128,10 +128,10 @@ int OnInit()
    #else                                     // #if not in test mode
       if(InpShowPanel==true)
          {
-         AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
-         AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt);
-         AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
-         AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+         AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt,TotalRowsSize);
+         AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt,TotalRowsSize);
+         AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt,TotalRowsSize);
+         AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt,TotalRowsSize);
       }else{
          BuyDashboardMaster.DeleteAll();
          SellDashboardMaster.DeleteAll();
@@ -221,10 +221,14 @@ void OnTick()
       SellGrid.GetGridStats();
 
       if(BuyGrid.mIsRecovering==true){
-         if(BuyGrid.CloseSubGrid(BuyGrid.mSubGrid, InpSubGridProfitToClose)){BuyGrid.mIteration++; BuyGrid.mRescueCount++;
+         if(BuyGrid.CloseSubGrid(BuyGrid.mSubGrid)){
+            BuyGrid.mIteration++; 
+            BuyGrid.mRescueCount++;
          }}
       if(SellGrid.mIsRecovering==true){
-         if(   SellGrid.CloseSubGrid(SellGrid.mSubGrid, InpSubGridProfitToClose)){SellGrid.mIteration++; SellGrid.mRescueCount++;
+         if(SellGrid.CloseSubGrid(SellGrid.mSubGrid)){
+            SellGrid.mIteration++; 
+            SellGrid.mRescueCount++;
          }}
    //Collect data to array
    if(IsNewBar() )
