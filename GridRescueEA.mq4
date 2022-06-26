@@ -5,12 +5,15 @@
 //+------------------------------------------------------------------+
 #property copyright           "Copyright 2022, BlueStone."
 #property link                "https://www.mql5.com"
-#property version             "1.08"
+#property version             "2.01"
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
+//#define  TESTMODE X       //If this not defined then "include" the GridTradeFunction, esle skip
 
-#include "include/GridTradeFunction.mqh"
+#ifndef	TESTMODE 
+   #include "include/GridTradeFunction.mqh"                         
+#endif 
 #include "include/GridOrderManagement.mqh"
 #include "include/LogsFunction.mqh"
 #include <Blues/TradeInfoClass.mqh>
@@ -111,6 +114,8 @@ int OnInit()
    //bool OrderOpenedChange=false;
 
    //--- Loggings Init - Create 2 dashboard
+   #ifndef	TESTMODE 
+   
    if(InpShowPanel==true)
    {
    if(InpTradeMode==Buy_and_Sell || InpTradeMode==BuyOnly){   
@@ -122,6 +127,19 @@ int OnInit()
       AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
       AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
    }
+   }else{
+   BuyDashboardMaster.DeleteAll();
+   SellDashboardMaster.DeleteAll();
+   BuyDashboardSub.DeleteAll();
+   SellDashboardSub.DeleteAll();
+   }
+   #else
+     if(InpShowPanel==true)
+      {
+      AddGridDashboard(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
+      AddGridDashboard(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt);
+      AddGridDashboard(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt);
+      AddGridDashboard(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt);
    }else{
    BuyDashboardMaster.DeleteAll();
    SellDashboardMaster.DeleteAll();
@@ -164,6 +182,7 @@ void OnDeinit(const int reason)
 void OnTick()
   {
 //---
+   #ifndef TESTMODE
    STradeSum BuySum;
    STradeSum SellSum;
    // Start martingale trades
@@ -193,6 +212,7 @@ void OnTick()
       
       }   
      }
+   #endif
      
    //Get the latest order info
    if(_OrdersTotal!=OrdersTotal())
