@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright           "Copyright 2022, BlueStone."
 #property link                "https://www.mql5.com"
-#property version             "2.02"
+#property version             "2.04"
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
@@ -14,22 +14,19 @@
 //+------------------------------------------------------------------+
 //|   EXTERNAL INPUTS                                                |
 //+------------------------------------------------------------------+
-
-#ifndef	PRODMODE 
-   #include "include/GridTradeFunction.mqh"
-   extern bool                                  InpOpenNewGridTrade   = false; // Open test grid trade?                         
-#endif
  
-#include "include/GridOrderManagement.mqh"
+#include "include/GridCollection.mqh"
 #include "include/LogsFunction.mqh"
 #include <Blues/TradeInfoClass.mqh>
 #include <Blues/Credentials.mqh>
 
 extern  string  __0__                                                      = "____ MAIN DRAWDOWN RESCUE SETTINGS _______";
-extern int                              InpMagicNumber                     =  1111;          //EA Magic number to rescue
+extern string                           InpSymbol                          = "";              //Symbol(s) - separated by comma (,)
+extern string                           InpSymbolSuffix                    = "";             //Broker's symbol suffix
+extern string                           InpMagicNumber                     =  1111;          //EA Magic number(s) - separated by comma (,)
 extern string                           InpTradeComment                    = __FILE__;       //EA Trade comment to rescue
-extern  int                             InpLevelToStartRescue              = 4;        // Order To Start Rescue
-extern  double                          InpSubGridProfitToClose            = 1;        // Sub-grid's Profit to close 
+extern  int                             InpLevelToStartRescue              = 4;              // Order To Start Rescue
+extern  double                          InpSubGridProfitToClose            = 1;              // Sub-grid's Profit to close 
 extern  bool                            InpShowPanel                       = false;               // Show master and sub grid panel
 extern  int                             InpPanelFontSize                   = 10;
 
@@ -39,6 +36,10 @@ extern  string  __1b__                                                     = "  
 extern  ENUM_BLUES_SUBGRID_MODE_SCHEME  InpRescueScheme                    = _default_;   // Rescue Scheme
 extern  string                          InpIterationModeAndProfitToCloseStr= "2:1.25, 3:2.5, 2:2.0, 3:2.0, 3:1, 3:1, 3:0.5, 3:0.5" ;   // Iteration Mode and ProfitToClose (If select RescueScheme = _Iteration_based_)
 
+extern  string  __2__                                                      = "____ BACKTEST AND DEMO ACCOUNT ONLY_______";
+extern bool                             InpOpenNewGridTrade   = false; // Open new grid to test?
+#include "include/GridTradeFunction.mqh"  
+
 //+------------------------------------------------------------------+
 //|   INTERNAL INPUTS                                                |
 //+------------------------------------------------------------------+
@@ -47,6 +48,8 @@ extern  string                          InpIterationModeAndProfitToCloseStr= "2:
 CTradeInfo *tradeInfo;
 CGridMaster *BuyGrid;
 CGridMaster *SellGrid;
+CGridCollection *BuyGridCollection;
+CGridCollection *SellGridCollection;
 //---inputs for dashboard logggings
 CDashboard BuyDashboardMaster("BuyMasterGridDB"
 	                              , CORNER_RIGHT_UPPER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
@@ -82,6 +85,7 @@ string                                       inpSellFileName         = __FILE__ 
 //---other internal parameters
 double AcctBalance,   AcctEquity;
 int _OrdersTotal = 0;
+int _magicnumber;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -99,9 +103,18 @@ int OnInit()
    AcctBalance=AccountBalance();
    AcctEquity = AccountEquity();
    tradeInfo = new CTradeInfo();
+   if(IsOneChartSetup()==true){
+   BuyGridCollection = new CGridCollection(InpSymbol,InpSymbolSuffix,InpMagicNumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);
+   SellGridCollection = new CGridCollection(InpSymbol,InpSymbolSuffix,InpMagicNumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);
+      Print(__FUNCTION__,"IsOneChartSetup = ", IsOneChartSetup());
+   }else{
    //--- Declare grid objects
-   BuyGrid = new CGridMaster(OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpMagicNumber,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
-   SellGrid = new CGridMaster(OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpMagicNumber,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
+      StringReplace(InpMagicNumber,",","");                                                   //make sure no trailing ","
+      _magicnumber = StringToInteger(StringTrimRight(StringTrimLeft(InpMagicNumber)));        //make sure no trailing blank space
+      BuyGrid = new CGridMaster(Symbol(),_magicnumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
+      SellGrid = new CGridMaster(Symbol(),_magicnumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
+      Print(__FUNCTION__,"IsOneChartSetup = ", IsOneChartSetup());
+   }
    //Print("Current order type is:", OrderTypeName (Grid.mOrderType));
    //tiebreak=false;
    //bool OrderOpenedChange=false;
@@ -182,22 +195,25 @@ void OnTick()
    if(InpOpenNewGridTrade)
      {
 
-         GetSum(BuySum,OP_BUY, InpMagicNumber);
-         GetSum(SellSum,OP_SELL, InpMagicNumber);
+         GetSum(BuySum,OP_BUY, _magicnumber);
+         GetSum(SellSum,OP_SELL, _magicnumber);
    
-   if(IsTradeAllowed() && !IsTradeContextBusy() && IsTesting())         //Only allow open new test trading order if in demo account 
+   if(
+      (IsTradeAllowed() && !IsTradeContextBusy()) 
+      && (IsTesting() || IsDemo())                  //Only allow open new test trading order if in demo account or backtest
+      )         
       {
       switch(InpTradeMode)
         {
          case  Buy_and_Sell:
-            OpenGridTrades(BuySum,OP_BUY, InpMagicNumber, InpTradeComment); 
-            OpenGridTrades(SellSum,OP_SELL, InpMagicNumber, InpTradeComment); 
+            OpenGridTrades(BuySum,OP_BUY, _magicnumber, InpTradeComment); 
+            OpenGridTrades(SellSum,OP_SELL, _magicnumber, InpTradeComment); 
            break;
          case  BuyOnly:
-            OpenGridTrades(BuySum,OP_BUY, InpMagicNumber, InpTradeComment); 
+            OpenGridTrades(BuySum,OP_BUY, _magicnumber, InpTradeComment); 
            break;
          case  SellOnly:
-            OpenGridTrades(SellSum,OP_SELL, InpMagicNumber, InpTradeComment); 
+            OpenGridTrades(SellSum,OP_SELL, _magicnumber, InpTradeComment); 
            break;
          default:
            break;
@@ -206,8 +222,14 @@ void OnTick()
       }   
      }
    #endif
-     
-   //Get the latest order info
+   
+   if(IsOneChartSetup())
+     {
+         BuyGridCollection.RescueGrid();
+         SellGridCollection.RescueGrid();
+     }  
+   else{
+      //Get the latest order info
    if(_OrdersTotal!=OrdersTotal())
      {
       _OrdersTotal = OrdersTotal();
@@ -251,12 +273,27 @@ void OnTick()
 		SellGrid.ShowGridOrdersOnChart(SellDashboardSub, SellGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
          }
      }
+   }
+
 
 
   }
 
 
 //+------------------------------------------------------------------+
+
+bool IsOneChartSetup(){
+   bool isonechart = false;
+   string symbolarr[];
+   string magicarr[];
+   if(StringSplitToArray(symbolarr,InpSymbol,",")>1
+      || StringSplitToArray(magicarr,InpMagicNumber,",")>1
+      )
+   isonechart= true;
+   else isonechart = false;
+  
+  return (isonechart);             
+}
 
 
 void AddGridDashboard(CDashboard &dashboard
