@@ -50,9 +50,7 @@ CGridMaster *BuyGrid;
 CGridMaster *SellGrid;
 CGridCollection *BuyGridCollection;
 CGridCollection *SellGridCollection;
-
 //---inputs for dashboard logggings when OneChartSetUp=false (OnePair)
-/*
 CDashboard BuyDashboardMaster("BuyMasterGridDB"
 	                              , CORNER_RIGHT_UPPER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
 	                              , 400                         // X Distance from margin
@@ -78,8 +76,6 @@ string                                       SubGridHeaderTxt        = "Sub Grid
 string                                       ColHeaderTxt            = "Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "  ;
 int                                          TotalRowsSize           = 15;
 int                                          HeaderRowsToSkip        = 3;
-*/
-
 
 //---inputs for dashboard logggings when OneChartSetUp=true (MultiPair)
 CDashboard MultiPairDashboardMaster("MultiPairGridDB"
@@ -115,7 +111,6 @@ int OnInit()
       ExpertRemove();
 
    } else{
-
       AcctBalance=AccountBalance();
       AcctEquity = AccountEquity();
       tradeInfo = new CTradeInfo();
@@ -125,21 +120,8 @@ int OnInit()
          SellGridCollection = new CGridCollection(InpSymbol,InpSymbolSuffix,InpMagicNumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);
          Print(__FUNCTION__,"IsOneChartSetup = ", IsOneChartSetup());
          
-         if(InpShowPanel==true)
-         {
-         //--- Loggings Init - Create 2 Collection dashboard
-         BuyGridCollection.mInfo = new CGridDashboard("BuyGridCollectionDB",CORNER_RIGHT_UPPER,600,15,30,3);
-         SellGridCollection.mInfo= new CGridDashboard("SellGridCollectionDB",CORNER_RIGHT_UPPER,3,15,30,3);
-         BuyGridCollection.mInfo.Add("BUY Grids                                           "
-                                     ,"Name          Type        Profit  Size   BeingRescued?   Iteration    RescueCount   "
-                                     ,InpPanelFontSize);
-         SellGridCollection.mInfo.Add("SELL Grids                                           "
-                                     ,"Name          Type        Profit  Size   BeingRescued?   Iteration    RescueCount   "
-                                     ,InpPanelFontSize);  
-         }else{
-            BuyGridCollection.mInfo.mDashboard.DeleteAll();
-            SellGridCollection.mInfo.mDashboard.DeleteAll();         
-         }
+         //--- Loggings Init - Create 2 dashboard
+      
       }else{
    //--- Declare grid objects
          StringReplace(InpMagicNumber,",","");                                                   //make sure no trailing ","
@@ -153,49 +135,32 @@ int OnInit()
          if(InpShowPanel==true)
          {
          if(InpTradeMode==Buy_and_Sell || InpTradeMode==BuyOnly){   
-            BuyGrid.mMasterInfo.Add("BUY MasterGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
-            BuyGrid.mSubInfo.Add("BUY SubGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
-            
+            AddGridDashboardOnePair(BuyDashboardMaster, "BuyMasterGridDB", "BUY "+MasterGridHeaderTxt, ColHeaderTxt, InpPanelFontSize);
+            AddGridDashboardOnePair(BuyDashboardSub, "BuySubGridDB", "BUY "+SubGridHeaderTxt, ColHeaderTxt, InpPanelFontSize);
             }
          
          if(InpTradeMode==Buy_and_Sell || InpTradeMode==SellOnly){
-            SellGrid.mMasterInfo.Add("BUY MasterGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
-            SellGrid.mSubInfo.Add("BUY SubGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
+            AddGridDashboardOnePair(SellDashboardMaster, "SellMasterGridDB", "SELL "+ MasterGridHeaderTxt, ColHeaderTxt, InpPanelFontSize);
+            AddGridDashboardOnePair(SellDashboardSub, "SellSubGridDB", "SELL "+SubGridHeaderTxt, ColHeaderTxt, InpPanelFontSize);
             }
          }else{
-         BuyGrid.mMasterInfo.mDashboard.DeleteAll();
-         BuyGrid.mSubInfo.mDashboard.DeleteAll();         
-         SellGrid.mMasterInfo.mDashboard.DeleteAll();
-         SellGrid.mSubInfo.mDashboard.DeleteAll();
+         BuyDashboardMaster.DeleteAll();
+         SellDashboardMaster.DeleteAll();
+         BuyDashboardSub.DeleteAll();
+         SellDashboardSub.DeleteAll();
          }
       #else                                     // #if not in test mode
          if(InpShowPanel==true)
             {
-            BuyGrid.mMasterInfo.Add("BUY MasterGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
-            BuyGrid.mSubInfo.Add("BUY SubGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
-            SellGrid.mMasterInfo.Add("SELL MasterGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
-            SellGrid.mSubInfo.Add("SELL SubGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
+            AddGridDashboardOnePair(BuyDashboardMaster, "BuyMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt,TotalRowsSize);
+            AddGridDashboardOnePair(BuyDashboardSub, "BuySubGridDB", SubGridHeaderTxt, ColHeaderTxt,TotalRowsSize);
+            AddGridDashboardOnePair(SellDashboardMaster, "SellMasterGridDB", MasterGridHeaderTxt, ColHeaderTxt,TotalRowsSize);
+            AddGridDashboardOnePair(SellDashboardSub, "SellSubGridDB", SubGridHeaderTxt, ColHeaderTxt,TotalRowsSize);
          }else{
-         BuyGrid.mMasterInfo.mDashboard.DeleteAll();
-         BuyGrid.mSubInfo.mDashboard.DeleteAll();         
-         SellGrid.mMasterInfo.mDashboard.DeleteAll();
-         SellGrid.mSubInfo.mDashboard.DeleteAll();
+            BuyDashboardMaster.DeleteAll();
+            SellDashboardMaster.DeleteAll();
+            BuyDashboardSub.DeleteAll();
+            SellDashboardSub.DeleteAll();
          }
       #endif
       }
@@ -226,25 +191,10 @@ void OnDeinit(const int reason)
       ||reason==REASON_PROGRAM
       ||reason==REASON_REMOVE
       ||reason==REASON_TEMPLATE
-      ){
+      )
+      SaveData(BuyGrid,inpBuyFileName);
+      SaveData(SellGrid,inpSellFileName);
       
-         if(IsOneChartSetup())
-           {
-             BuyGridCollection.mInfo.mDashboard.DeleteAll();
-             SellGridCollection.mInfo.mDashboard.DeleteAll();    
-           }
-           else{
-           SaveData(BuyGrid,inpBuyFileName);
-         SaveData(SellGrid,inpSellFileName);
-      
-      
-         BuyGrid.mMasterInfo.mDashboard.DeleteAll();
-         BuyGrid.mSubInfo.mDashboard.DeleteAll();         
-         SellGrid.mMasterInfo.mDashboard.DeleteAll();
-         SellGrid.mSubInfo.mDashboard.DeleteAll();
-
-           }
-      }
   }
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
@@ -291,12 +241,6 @@ void OnTick()
      {
          BuyGridCollection.RescueGrid();
          SellGridCollection.RescueGrid();
-         if(IsNewBar())
-           {
-            BuyGridCollection.ShowCollectionOrdersOnChart();
-            SellGridCollection.ShowCollectionOrdersOnChart();
-           }
-         
      }  
    else{
          
@@ -325,25 +269,31 @@ void OnTick()
    //Collect data to array
    if(IsNewBar() )
      {
-         if(InpShowPanel==true)
-           {
+     if(IsOneChartSetup()==false)
+       {
          //---BUY GRID
          //Print(__FUNCTION__,"NUmber of opned buy order is: ", BuyGrid.CountOrder(TYPE,BuyGrid.mOrderType,MODE_TRADES));
+         if(InpShowPanel==true)
+           {
             //Print("BuyGrid ArraySize is ", ArraySize(BuyGrid.mOrders) );
-            BuyGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
-   		   BuyGrid.ShowGridOrdersOnChart(BuyGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
+            BuyGrid.ShowGridOrdersOnChart(BuyDashboardMaster, 4);  //pass main orders to Dashboard Sub
+   		   BuyGrid.ShowGridOrdersOnChart(BuyDashboardSub, BuyGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
+           }
    
         //---SELL GRID
-            //Print(__FUNCTION__,"NUmber of opned sell order is: ", BuyGrid.CountOrder(TYPE,SellGrid.mOrderType,MODE_TRADES));
-            SellGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
-      		SellGrid.ShowGridOrdersOnChart(SellGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
+         //Print(__FUNCTION__,"NUmber of opned sell order is: ", BuyGrid.CountOrder(TYPE,SellGrid.mOrderType,MODE_TRADES));
+         if(InpShowPanel==true)
+           {
+            SellGrid.ShowGridOrdersOnChart(SellDashboardMaster, 4);  //pass main orders to Dashboard Sub
+      		SellGrid.ShowGridOrdersOnChart(SellDashboardSub, SellGrid.mSubGrid, 3);   //pass subGrid orders to Dashboard Sub
             }
+       }
      }
    }
 
 
 
-}
+  }
 
 
 //+------------------------------------------------------------------+
