@@ -21,6 +21,7 @@
 #include <Blues/Credentials.mqh>
 
 extern  string  __0__                                                      = "____ MAIN DRAWDOWN RESCUE SETTINGS _______";
+extern bool                             InpRescueAllowed                   = true;           //Allow rescue?
 extern string                           InpSymbol                          = "";              //Symbol(s) - separated by comma (,)
 extern string                           InpSymbolSuffix                    = "";             //Broker's symbol suffix
 extern string                           InpMagicNumber                     =  1111;          //EA Magic number(s) - separated by comma (,)
@@ -289,8 +290,8 @@ void OnTick()
    
    if(IsOneChartSetup())
      {
-         BuyGridCollection.RescueGrid();
-         SellGridCollection.RescueGrid();
+         BuyGridCollection.RescueGrid(InpRescueAllowed);
+         SellGridCollection.RescueGrid(InpRescueAllowed);
          if(IsNewBar())
            {
             BuyGridCollection.ShowCollectionOrdersOnChart();
@@ -311,17 +312,21 @@ void OnTick()
          BuyGrid.GetGridStats();
          SellGrid.GetSubGridOrders();
          SellGrid.GetGridStats();
-
-      if(BuyGrid.mIsRecovering==true){
-         if(BuyGrid.CloseSubGrid(BuyGrid.mSubGrid)){
+      
+      if(InpRescueAllowed==true)
+        {
+         if(BuyGrid.mIsRecovering==true){
+            if(BuyGrid.CloseSubGrid(BuyGrid.mSubGrid)){
             BuyGrid.mIteration++; 
             BuyGrid.mRescueCount++;
          }}
-      if(SellGrid.mIsRecovering==true){
-         if(SellGrid.CloseSubGrid(SellGrid.mSubGrid)){
+         if(SellGrid.mIsRecovering==true){
+            if(SellGrid.CloseSubGrid(SellGrid.mSubGrid)){
             SellGrid.mIteration++; 
             SellGrid.mRescueCount++;
          }}
+        }
+
    //Collect data to array
    if(IsNewBar() )
      {
