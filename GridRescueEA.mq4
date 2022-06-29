@@ -25,7 +25,7 @@ extern  string  __0__                                                      = "__
 extern bool                             InpRescueAllowed                   = true;           //Allow rescue?
 extern string                           InpSymbol                          = "";             //Symbol(s)-separated by comma (,)
 extern string                           InpSymbolSuffix                    = "";             //Broker's symbol suffix
-extern string                           InpMagicNumber                     =  1111;          //EA Magic number(s) - separated by comma (,)
+extern string                           InpMagicNumber                     = "1111";          //EA Magic number(s) - separated by comma (,)
 extern string                           InpTradeComment                    = __FILE__;       //EA Trade comment to rescue
 extern  int                             InpLevelToStartRescue              = 4;              // Order To Start Rescue
 extern  double                          InpSubGridProfitToClose            = 1;              // Sub-grid's Profit to close 
@@ -106,14 +106,13 @@ int OnInit()
          }
       }else{
       //--- Declare grid objects
-         StringReplace(InpMagicNumber,",","");                                                   //make sure no trailing ","
-         _magicnumber = StringToInteger(StringTrimRight(StringTrimLeft(InpMagicNumber)));        //make sure no trailing blank space
+         //StringReplace(InpMagicNumber,",","");                         //make sure no trailing "," if only one magic
+         _magicnumber = StringToInteger(StringTrimRight(StringTrimLeft(StringReplace(InpMagicNumber,",",""))));        //make sure no trailing blank space
          BuyGrid = new CGridMaster(_inpsymbol,_magicnumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
          SellGrid = new CGridMaster(_inpsymbol,_magicnumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
          Print(__FUNCTION__,"IsOneChartSetup = ", IsOneChartSetup());
    
          //--- Loggings Init - Create 2 dashboard
-      #ifndef	PRODMODE                         // #if in test mode
          if(InpShowPanel==true)
          {
          if(InpTradeMode==Buy_and_Sell || InpTradeMode==BuyOnly){   
@@ -145,32 +144,7 @@ int OnInit()
          SellGrid.mMasterInfo.mDashboard.DeleteAll();
          SellGrid.mSubInfo.mDashboard.DeleteAll();
          }
-      #else                                     // #if not in test mode
-         if(InpShowPanel==true)
-            {
-            BuyGrid.mMasterInfo.Add("BUY MasterGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
-            BuyGrid.mSubInfo.Add("BUY SubGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
-            SellGrid.mMasterInfo.Add("SELL MasterGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
-            SellGrid.mSubInfo.Add("SELL SubGrid                                           "
-                                         ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
-                                         ,InpPanelFontSize);
-            BuyGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
-   		   BuyGrid.ShowGridOrdersOnChart(BuyGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
-            SellGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
-      		SellGrid.ShowGridOrdersOnChart(SellGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
-         }else{
-         BuyGrid.mMasterInfo.mDashboard.DeleteAll();
-         BuyGrid.mSubInfo.mDashboard.DeleteAll();         
-         SellGrid.mMasterInfo.mDashboard.DeleteAll();
-         SellGrid.mSubInfo.mDashboard.DeleteAll();
-         }
-      #endif
+
       }
 
 
@@ -327,16 +301,35 @@ void OnTick()
 
 bool IsOneChartSetup(){
    bool isonechart = false;
-   string symbolarr[];
-   string magicarr[];
-   if(StringSplitToArray(symbolarr,InpSymbol,",")>1
-      || StringSplitToArray(magicarr,InpMagicNumber,",")>1
+   if(IsMultiPair()
+      || IsMultiMagic()
       )
    isonechart= true;
    else isonechart = false;
   
   return (isonechart);             
 }
+
+bool  IsMultiPair(){
+   string symbolarr[];
+   bool ismultipair = false;
+   if(StringSplitToArray(symbolarr,InpSymbol,",")>1)
+     {
+      ismultipair = true;
+     } 
+   return (ismultipair); 
+}
+
+bool  IsMultiMagic(){
+   string magicarr[];
+   bool ismultimagic = false;
+   if(StringSplitToArray(magicarr,InpMagicNumber,",")>1)
+     {
+      ismultimagic = true;
+     } 
+   return (ismultimagic); 
+}
+
 
 
 void AddGridDashboardOnePair(CDashboard &dashboard
