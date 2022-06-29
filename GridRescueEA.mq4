@@ -20,15 +20,16 @@
 #include <Blues/TradeInfoClass.mqh>
 #include <Blues/Credentials.mqh>
 
+
 extern  string  __0__                                                      = "____ MAIN DRAWDOWN RESCUE SETTINGS _______";
 extern bool                             InpRescueAllowed                   = true;           //Allow rescue?
-extern string                           InpSymbol                          = "";              //Symbol(s) - separated by comma (,)
+extern string                           InpSymbol                          = "";             //Symbol(s)-separated by comma (,)
 extern string                           InpSymbolSuffix                    = "";             //Broker's symbol suffix
 extern string                           InpMagicNumber                     =  1111;          //EA Magic number(s) - separated by comma (,)
 extern string                           InpTradeComment                    = __FILE__;       //EA Trade comment to rescue
 extern  int                             InpLevelToStartRescue              = 4;              // Order To Start Rescue
 extern  double                          InpSubGridProfitToClose            = 1;              // Sub-grid's Profit to close 
-extern  bool                            InpShowPanel                       = false;               // Show master and sub grid panel
+extern  bool                            InpShowPanel                       = false;          // Show Panel?
 extern  int                             InpPanelFontSize                   = 10;
 
 extern  string  __1__                                                      = "____ ADVANCED RESCUE OPTIONS_______";
@@ -52,48 +53,6 @@ CGridMaster *SellGrid;
 CGridCollection *BuyGridCollection;
 CGridCollection *SellGridCollection;
 
-//---inputs for dashboard logggings when OneChartSetUp=false (OnePair)
-/*
-CDashboard BuyDashboardMaster("BuyMasterGridDB"
-	                              , CORNER_RIGHT_UPPER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
-	                              , 400                         // X Distance from margin
-	                              , 15);                      // Y Distance from margin 
-   
-CDashboard BuyDashboardSub("BuySubGridDB"
-	                              , CORNER_RIGHT_UPPER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
-	                              , 3                         // X Distance from margin
-	                              , 15);                      // Y Distance from margin 
-
-CDashboard SellDashboardMaster("SellMasterGridDB"
-	                              , CORNER_RIGHT_LOWER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
-	                              , 400                         // X Distance from margin
-	                              , 15);                      // Y Distance from margin 
-   
-CDashboard SellDashboardSub("SellSubGridDB"
-	                              , CORNER_RIGHT_LOWER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
-	                              , 3                         // X Distance from margin
-	                              , 15);                      // Y Distance from margin 
-
-string                                       MasterGridHeaderTxt     = "Master Grid orders                                " ;
-string                                       SubGridHeaderTxt        = "Sub Grid orders                                   ";
-string                                       ColHeaderTxt            = "Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "  ;
-int                                          TotalRowsSize           = 15;
-int                                          HeaderRowsToSkip        = 3;
-*/
-
-
-//---inputs for dashboard logggings when OneChartSetUp=true (MultiPair)
-CDashboard MultiPairDashboardMaster("MultiPairGridDB"
-	                              , CORNER_RIGHT_UPPER         // Corner (0=top left 1=topright 2=bottom left 3=bottom right)
-	                              , 400                         // X Distance from margin
-	                              , 15); 
-string                                       MultiPairDBHeaderTxt     = "Master Grid orders                                " ;
-string                                       ColHeaderTxt            = "GridName   Type   Profit   GridSize   BeingRescued?   Iteration   RescuedCount   "  ;
-int                                          TotalRowsSize           = 15;
-int                                          HeaderRowsToSkip        = 3;
-
-
-
 //---input for file saving
 string                                       inpBuyFileName          = __FILE__ + "BuyGrid";
 string                                       inpSellFileName         = __FILE__ + "SellGrid";
@@ -102,6 +61,7 @@ string                                       inpSellFileName         = __FILE__ 
 double AcctBalance,   AcctEquity;
 int _OrdersTotal = 0;
 int _magicnumber;
+string _inpsymbol;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -109,28 +69,31 @@ int _magicnumber;
 int OnInit()
   {
 //--- 
+   _inpsymbol = (InpSymbol=="") ? Symbol(): InpSymbol;
 
    if(inpUnlockPass!=pass)
      {
-      if (MessageBox("Please enter pass to continue","Password needed!",MB_OK)==1);
-      ExpertRemove();
-
+      if (MessageBox("Incorrect Password!",MB_OK)==1);
+      
+      return (INIT_FAILED);
    } else{
 
       AcctBalance=AccountBalance();
       AcctEquity = AccountEquity();
       tradeInfo = new CTradeInfo();
-   
+      
+      
       if(IsOneChartSetup()==true){
-         BuyGridCollection = new CGridCollection(InpSymbol,InpSymbolSuffix,InpMagicNumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);
-         SellGridCollection = new CGridCollection(InpSymbol,InpSymbolSuffix,InpMagicNumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);
+         BuyGridCollection = new CGridCollection(_inpsymbol,InpSymbolSuffix,InpMagicNumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);
+         SellGridCollection = new CGridCollection(_inpsymbol,InpSymbolSuffix,InpMagicNumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);
+         BuyGridCollection.mInfo = new CGridDashboard("BuyGridCollectionDB",CORNER_RIGHT_UPPER,600,15,30,3);
+         SellGridCollection.mInfo= new CGridDashboard("SellGridCollectionDB",CORNER_RIGHT_UPPER,3,15,30,3);
          Print(__FUNCTION__,"IsOneChartSetup = ", IsOneChartSetup());
          
          if(InpShowPanel==true)
          {
          //--- Loggings Init - Create 2 Collection dashboard
-         BuyGridCollection.mInfo = new CGridDashboard("BuyGridCollectionDB",CORNER_RIGHT_UPPER,600,15,30,3);
-         SellGridCollection.mInfo= new CGridDashboard("SellGridCollectionDB",CORNER_RIGHT_UPPER,3,15,30,3);
+
          BuyGridCollection.mInfo.Add("BUY Grids                                           "
                                      ,"Name          Type        Profit  Size   BeingRescued?   Iteration    RescueCount   "
                                      ,InpPanelFontSize);
@@ -142,11 +105,11 @@ int OnInit()
             SellGridCollection.mInfo.mDashboard.DeleteAll();         
          }
       }else{
-   //--- Declare grid objects
+      //--- Declare grid objects
          StringReplace(InpMagicNumber,",","");                                                   //make sure no trailing ","
          _magicnumber = StringToInteger(StringTrimRight(StringTrimLeft(InpMagicNumber)));        //make sure no trailing blank space
-         BuyGrid = new CGridMaster(Symbol(),_magicnumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
-         SellGrid = new CGridMaster(Symbol(),_magicnumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
+         BuyGrid = new CGridMaster(_inpsymbol,_magicnumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
+         SellGrid = new CGridMaster(_inpsymbol,_magicnumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
          Print(__FUNCTION__,"IsOneChartSetup = ", IsOneChartSetup());
    
          //--- Loggings Init - Create 2 dashboard
@@ -161,15 +124,20 @@ int OnInit()
                                          ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
                                          ,InpPanelFontSize);
             
+            BuyGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
+   		   BuyGrid.ShowGridOrdersOnChart(BuyGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
             }
          
          if(InpTradeMode==Buy_and_Sell || InpTradeMode==SellOnly){
-            SellGrid.mMasterInfo.Add("BUY MasterGrid                                           "
+            SellGrid.mMasterInfo.Add("SELL MasterGrid                                           "
                                          ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
                                          ,InpPanelFontSize);
-            SellGrid.mSubInfo.Add("BUY SubGrid                                           "
+            SellGrid.mSubInfo.Add("SELL SubGrid                                           "
                                          ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
                                          ,InpPanelFontSize);
+            SellGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
+      		SellGrid.ShowGridOrdersOnChart(SellGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
+                             
             }
          }else{
          BuyGrid.mMasterInfo.mDashboard.DeleteAll();
@@ -192,6 +160,10 @@ int OnInit()
             SellGrid.mSubInfo.Add("SELL SubGrid                                           "
                                          ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
                                          ,InpPanelFontSize);
+            BuyGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
+   		   BuyGrid.ShowGridOrdersOnChart(BuyGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
+            SellGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
+      		SellGrid.ShowGridOrdersOnChart(SellGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
          }else{
          BuyGrid.mMasterInfo.mDashboard.DeleteAll();
          BuyGrid.mSubInfo.mDashboard.DeleteAll();         
@@ -236,7 +208,7 @@ void OnDeinit(const int reason)
            }
            else{
            SaveData(BuyGrid,inpBuyFileName);
-         SaveData(SellGrid,inpSellFileName);
+            SaveData(SellGrid,inpSellFileName);
       
       
          BuyGrid.mMasterInfo.mDashboard.DeleteAll();
@@ -332,13 +304,13 @@ void OnTick()
      {
          if(InpShowPanel==true)
            {
-         //---BUY GRID
-         //Print(__FUNCTION__,"NUmber of opned buy order is: ", BuyGrid.CountOrder(TYPE,BuyGrid.mOrderType,MODE_TRADES));
+            //---BUY GRID
+            //Print(__FUNCTION__,"NUmber of opned buy order is: ", BuyGrid.CountOrder(TYPE,BuyGrid.mOrderType,MODE_TRADES));
             //Print("BuyGrid ArraySize is ", ArraySize(BuyGrid.mOrders) );
             BuyGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
    		   BuyGrid.ShowGridOrdersOnChart(BuyGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
    
-        //---SELL GRID
+            //---SELL GRID
             //Print(__FUNCTION__,"NUmber of opned sell order is: ", BuyGrid.CountOrder(TYPE,SellGrid.mOrderType,MODE_TRADES));
             SellGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
       		SellGrid.ShowGridOrdersOnChart(SellGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
