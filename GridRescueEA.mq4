@@ -10,6 +10,7 @@
 #property strict
 
 //#define  PRODMODE X       //If this not defined then "include" the GridTradeFunction, esle skip
+//#define  _DEBUG   .
 
 //+------------------------------------------------------------------+
 //|   EXTERNAL INPUTS                                                |
@@ -25,7 +26,7 @@ extern  string  __0__                                                      = "__
 extern bool                             InpRescueAllowed                   = true;           //Allow rescue?
 extern string                           InpSymbol                          = "";             //Symbol(s)-separated by comma (,)
 extern string                           InpSymbolSuffix                    = "";             //Broker's symbol suffix
-extern string                           InpMagicNumber                     = "1111";          //EA Magic number(s) - separated by comma (,)
+extern string                           InpMagicNumber                     = "1234";          //EA Magic number(s) - separated by comma (,)
 extern string                           InpTradeComment                    = __FILE__;       //EA Trade comment to rescue
 extern  int                             InpLevelToStartRescue              = 4;              // Order To Start Rescue
 extern  double                          InpSubGridProfitToClose            = 1;              // Sub-grid's Profit to close 
@@ -60,8 +61,9 @@ string                                       inpSellFileName         = __FILE__ 
 //---other internal parameters
 double AcctBalance,   AcctEquity;
 int _OrdersTotal = 0;
-int _magicnumber;
+int _inpmagicnumber;
 string _inpsymbol;
+int   _testeamagic = 1234;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -70,7 +72,8 @@ int OnInit()
   {
 //--- 
    _inpsymbol = (InpSymbol=="") ? Symbol(): InpSymbol;
-
+   Print(GetInputInfo(InpSymbol,SYMBOL));
+   Print(GetInputInfo(InpMagicNumber,MAGIC));
    if(inpUnlockPass!=pass)
      {
       if (MessageBox("Incorrect Password!",MB_OK)==1);
@@ -84,11 +87,12 @@ int OnInit()
       
       
       if(IsOneChartSetup()==true){
+         Print(__FUNCTION__,": IsOneChartSetup = ", IsOneChartSetup());
          BuyGridCollection = new CGridCollection(_inpsymbol,InpSymbolSuffix,InpMagicNumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);
          SellGridCollection = new CGridCollection(_inpsymbol,InpSymbolSuffix,InpMagicNumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);
          BuyGridCollection.mInfo = new CGridDashboard("BuyGridCollectionDB",CORNER_RIGHT_UPPER,600,15,30,3);
          SellGridCollection.mInfo= new CGridDashboard("SellGridCollectionDB",CORNER_RIGHT_UPPER,3,15,30,3);
-         Print(__FUNCTION__,"IsOneChartSetup = ", IsOneChartSetup());
+
          
          if(InpShowPanel==true)
          {
@@ -105,18 +109,23 @@ int OnInit()
             SellGridCollection.mInfo.mDashboard.DeleteAll();         
          }
       }else{
+         Print(__FUNCTION__,": IsOneChartSetup = ", IsOneChartSetup());
       //--- Declare grid objects
          //StringReplace(InpMagicNumber,",","");                         //make sure no trailing "," if only one magic
-         _magicnumber = StringToInteger(StringTrimRight(StringTrimLeft(StringReplace(InpMagicNumber,",",""))));        //make sure no trailing blank space
-         BuyGrid = new CGridMaster(_inpsymbol,_magicnumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
-         SellGrid = new CGridMaster(_inpsymbol,_magicnumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
-         Print(__FUNCTION__,"IsOneChartSetup = ", IsOneChartSetup());
-   
+         //_inpmagicnumber = StringToInteger(StringTrimRight(StringTrimLeft(StringReplace(InpMagicNumber,",",""))));        //make sure no trailing blank space
+         _inpmagicnumber = StringToInteger(StringTrimRight(StringTrimLeft(InpMagicNumber)));        //make sure no trailing blank space
+         Print(__FUNCTION__,": input magic is", _inpmagicnumber);
+         //Print(_inpmagicnumber);
+         BuyGrid = new CGridMaster(_inpsymbol,_inpmagicnumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
+         SellGrid = new CGridMaster(_inpsymbol,_inpmagicnumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
+
+
+         //PrintFormat(__FUNCTION__+"Grid Symbol: %s, Magic: %d", _inpsymbol, _inpmagicnumber);   
          //--- Loggings Init - Create 2 dashboard
          if(InpShowPanel==true)
          {
          if(InpTradeMode==Buy_and_Sell || InpTradeMode==BuyOnly){   
-            BuyGrid.mMasterInfo.Add("BUY MasterGrid                                           "
+            BuyGrid.mMasterInfo.Add("BUY MasterGrid"+"                    "+StringFormat("%s:%d",_inpsymbol,_inpmagicnumber)
                                          ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
                                          ,InpPanelFontSize);
             BuyGrid.mSubInfo.Add("BUY SubGrid                                           "
@@ -128,7 +137,7 @@ int OnInit()
             }
          
          if(InpTradeMode==Buy_and_Sell || InpTradeMode==SellOnly){
-            SellGrid.mMasterInfo.Add("SELL MasterGrid                                           "
+            SellGrid.mMasterInfo.Add("SELL MasterGrid"+"                    "+StringFormat("%s:%d",_inpsymbol,_inpmagicnumber)
                                          ,"Ticket   Symbol   Type   LotSize   OpenPrice   Profit   "
                                          ,InpPanelFontSize);
             SellGrid.mSubInfo.Add("SELL SubGrid                                           "
@@ -181,14 +190,14 @@ void OnDeinit(const int reason)
              SellGridCollection.mInfo.mDashboard.DeleteAll();    
            }
            else{
-           SaveData(BuyGrid,inpBuyFileName);
+            SaveData(BuyGrid,inpBuyFileName);
             SaveData(SellGrid,inpSellFileName);
       
       
-         BuyGrid.mMasterInfo.mDashboard.DeleteAll();
-         BuyGrid.mSubInfo.mDashboard.DeleteAll();         
-         SellGrid.mMasterInfo.mDashboard.DeleteAll();
-         SellGrid.mSubInfo.mDashboard.DeleteAll();
+            BuyGrid.mMasterInfo.mDashboard.DeleteAll();
+            BuyGrid.mSubInfo.mDashboard.DeleteAll();         
+            SellGrid.mMasterInfo.mDashboard.DeleteAll();
+            SellGrid.mSubInfo.mDashboard.DeleteAll();
 
            }
       }
@@ -206,8 +215,8 @@ void OnTick()
    if(InpOpenNewGridTrade)
      {
 
-         GetSum(BuySum,OP_BUY, _magicnumber);
-         GetSum(SellSum,OP_SELL, _magicnumber);
+         GetSum(BuySum,OP_BUY, _testeamagic);
+         GetSum(SellSum,OP_SELL, _testeamagic);
    
    if(
       (IsTradeAllowed() && !IsTradeContextBusy()) 
@@ -217,14 +226,14 @@ void OnTick()
       switch(InpTradeMode)
         {
          case  Buy_and_Sell:
-            OpenGridTrades(BuySum,OP_BUY, _magicnumber, InpTradeComment); 
-            OpenGridTrades(SellSum,OP_SELL, _magicnumber, InpTradeComment); 
+            OpenGridTrades(BuySum,OP_BUY, _testeamagic, InpTradeComment); 
+            OpenGridTrades(SellSum,OP_SELL, _testeamagic, InpTradeComment); 
            break;
          case  BuyOnly:
-            OpenGridTrades(BuySum,OP_BUY, _magicnumber, InpTradeComment); 
+            OpenGridTrades(BuySum,OP_BUY, _testeamagic, InpTradeComment); 
            break;
          case  SellOnly:
-            OpenGridTrades(SellSum,OP_SELL, _magicnumber, InpTradeComment); 
+            OpenGridTrades(SellSum,OP_SELL, _testeamagic, InpTradeComment); 
            break;
          default:
            break;
@@ -261,16 +270,15 @@ void OnTick()
       
       if(InpRescueAllowed==true)
         {
-         if(BuyGrid.mIsRecovering==true){
-            if(BuyGrid.CloseSubGrid(BuyGrid.mSubGrid)){
+         if(BuyGrid.mIsRecovering==true && BuyGrid.CloseSubGrid(BuyGrid.mSubGrid)){
             BuyGrid.mIteration++; 
             BuyGrid.mRescueCount++;
-         }}
-         if(SellGrid.mIsRecovering==true){
-            if(SellGrid.CloseSubGrid(SellGrid.mSubGrid)){
+         }
+         if(SellGrid.mIsRecovering==true && SellGrid.CloseSubGrid(SellGrid.mSubGrid)){
+
             SellGrid.mIteration++; 
             SellGrid.mRescueCount++;
-         }}
+         }
         }
 
    //Collect data to array
@@ -279,13 +287,10 @@ void OnTick()
          if(InpShowPanel==true)
            {
             //---BUY GRID
-            //Print(__FUNCTION__,"NUmber of opned buy order is: ", BuyGrid.CountOrder(TYPE,BuyGrid.mOrderType,MODE_TRADES));
-            //Print("BuyGrid ArraySize is ", ArraySize(BuyGrid.mOrders) );
             BuyGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
    		   BuyGrid.ShowGridOrdersOnChart(BuyGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
    
             //---SELL GRID
-            //Print(__FUNCTION__,"NUmber of opned sell order is: ", BuyGrid.CountOrder(TYPE,SellGrid.mOrderType,MODE_TRADES));
             SellGrid.ShowGridOrdersOnChart();  //pass main orders to Dashboard Sub
       		SellGrid.ShowGridOrdersOnChart(SellGrid.mSubGrid);   //pass subGrid orders to Dashboard Sub
             }
@@ -295,6 +300,53 @@ void OnTick()
 
 
 }
+
+string GetInputInfo(string _input, int type = SYMBOL)
+{
+   string arr[];
+   string suffix;
+   string strlist;
+   string output;
+   int count;
+
+   count = StringSplitToArray(arr,_input,",");
+   suffix = InpSymbolSuffix;
+   //concaternate
+   if(type==SYMBOL)
+     {
+       if (_input=="") output = "Rescue current chart symbol: " + Symbol();
+         else if (count == 1) output = "Rescue " + IntegerToString(count) + " symbol: " + arr[0];
+         else if(count > 1)
+           {
+             for(int i=0;i<count;i++)
+            {
+               if (i==0) strlist = arr[i]+suffix+",";
+               else if (i==count-1 )strlist = strlist + arr[i]+suffix;
+               else strlist = strlist + arr[i]+ suffix + ",";
+            }
+          output = "Rescue " + IntegerToString(count) + " symbol: " + strlist; 
+           }
+     }
+     
+   if(type==MAGIC)
+     {
+       if (_input=="") output = "Rescue manual trade - magic = 0 ";
+         else if (count == 1) output = "Rescue " + IntegerToString(count) + " magic: " + arr[0];
+         else if(count > 1)
+           {
+             for(int i=0;i<count;i++)
+            {
+               if (i==0) strlist = arr[i]+",";
+               else if (i==count-1 )strlist = strlist + arr[i];
+               else strlist = strlist + arr[i] + ",";
+            }
+          output = "Rescue " + IntegerToString(count) + " magic: " + strlist; 
+           }
+     }  
+
+   return (output);
+}
+
 
 
 //+------------------------------------------------------------------+
