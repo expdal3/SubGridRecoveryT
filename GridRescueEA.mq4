@@ -114,6 +114,7 @@ int OnInit()
          //StringReplace(InpMagicNumber,",","");                         //make sure no trailing "," if only one magic
          //_inpmagicnumber = StringToInteger(StringTrimRight(StringTrimLeft(StringReplace(InpMagicNumber,",",""))));        //make sure no trailing blank space
          _inpmagicnumber = StringToInteger(StringTrimRight(StringTrimLeft(InpMagicNumber)));        //make sure no trailing blank space
+         _inpsymbol = _inpsymbol+InpSymbolSuffix;
          Print(__FUNCTION__,": input magic is", _inpmagicnumber);
          //Print(_inpmagicnumber);
          BuyGrid = new CGridMaster(_inpsymbol,_inpmagicnumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
@@ -256,7 +257,10 @@ void OnTick()
      }  
    else{
          
-      if(_OrdersTotal!=OrdersTotal())        //Get the latest order info
+      if(_OrdersTotal!=OrdersTotal()
+         || BuyGrid.IsAGridOrderJustClosed()
+         || SellGrid.IsAGridOrderJustClosed()
+         )        //Get the latest order info
         {
          _OrdersTotal = OrdersTotal();
          BuyGrid.GetOrdersOpened();           //pass data to Grid array that match magicnumber BuyGrid.mOrders
