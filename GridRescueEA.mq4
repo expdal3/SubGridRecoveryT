@@ -108,8 +108,8 @@ int OnInit()
                                                 ,InpPanicCloseOrderCount,InpPanicCloseMaxDrawdown,InpPanicCloseMaxLotSize,InpPanicCloseProfitToClose,InpPanicClosePosOfSecondOrder,InpStopPanicAfterNClose
                                                 ,InpPanicCloseIsDriftProfitAfterEachIteration,InpPanicCloseDriftProfitStep,InpPanicCloseDriftLimit
                                                 );
-         BuyGridCollection.mInfo = new CGridDashboard("BuyGridCollectionDB",CORNER_RIGHT_UPPER,600,15,30,3);
-         SellGridCollection.mInfo= new CGridDashboard("SellGridCollectionDB",CORNER_RIGHT_UPPER,3,15,30,3);
+         BuyGridCollection.mInfo = new CGridDashboard("BuyGridCollectionDB",CORNER_RIGHT_UPPER,700,15,30,3);
+         SellGridCollection.mInfo= new CGridDashboard("SellGridCollectionDB",CORNER_RIGHT_UPPER,10,15,30,3);
 
          
          if(InpShowPanel==true)
@@ -117,10 +117,10 @@ int OnInit()
          //--- Loggings Init - Create 2 Collection dashboard
 
          BuyGridCollection.mInfo.Add("BUY Grids                                           "
-                                     ,"Name          Type        Profit  Size   BeingRescued?   Iteration    RescueCount   "
+                                     ,"Name          Type        Profit  Size   BeingRescued?   Iter    RescueCount  PanicCount "
                                      ,InpPanelFontSize);
          SellGridCollection.mInfo.Add("SELL Grids                                           "
-                                     ,"Name          Type        Profit  Size   BeingRescued?   Iteration    RescueCount   "
+                                     ,"Name          Type        Profit  Size   BeingRescued?   Iter    RescueCount  PanicCount "
                                      ,InpPanelFontSize);  
          }else{
             BuyGridCollection.mInfo.mDashboard.DeleteAll();
