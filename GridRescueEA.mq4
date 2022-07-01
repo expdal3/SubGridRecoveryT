@@ -44,10 +44,10 @@ extern   int                            InpPanicCloseOrderCount            = 6; 
 extern   double                         InpPanicCloseMaxDrawdown           = 0.0;         // MaxDrawdown for PanicClose (0 = disable)
 extern   double                         InpPanicCloseMaxLotSize            = 0.0;         // MaxLotSize for PanicClose (0 = disable)
 extern   double                         InpPanicCloseProfitToClose         = 2.0;        // Profit level for panic close
-extern   int                            InpPanicClosePosOfSecondOrder      = 0;           // Position of 2nd panic order 0=Bottom grid order, 1= next grid order ...;  
-extern   bool                           InpPanicCloseReduceProfitToCloseEachIteration              = false;      // Reduce ProfiToClose in subsequent PanicClose;  
-extern   double                         InpPanicCloseReduceProfitStep      = -1;       // Step to reduce; 
-extern   double                         InpPanicCloseProfitToCloseBottom   = -5;       // Minimum ProfitToClose to stop reduce; 
+extern   int                            InpPanicClosePosOfSecondOrder      = 0;           // Position of 2nd panic order 0=Smallest order, 1= next grid order ...;  
+extern   bool                           InpPanicCloseFriftProfitToCloseEachIteration              = false;      // Reduce/Increase ProfiToClose in subsequent PanicClose;  
+extern   double                         InpPanicCloseDriftProfitStep       = -1;       // Step to reduce (-) or increase(+); 
+extern   double                         InpPanicCloseProfitToCloseStopDrift  = 5;       // Min/Max Change to stop drift ProfitToClose; 
 extern   int                            InpStopPanicAfterNClose            = 5;           // Disable panic close after n time
    
  
