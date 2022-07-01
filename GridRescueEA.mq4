@@ -31,7 +31,7 @@ extern string                           InpTradeComment                    = __F
 extern  int                             InpLevelToStartRescue              = 4;              // Order To Start Rescue
 extern  double                          InpSubGridProfitToClose            = 1;              // Sub-grid's Profit to close 
 extern  bool                            InpShowPanel                       = false;          // Show Panel?
-extern  int                             InpPanelFontSize                   = 10;
+extern  int                             InpPanelFontSize                   = 8;
 
 extern  string  __1__                                                      = "____ ADVANCED RESCUE OPTIONS_______";
 extern  string  __1a__                                                     = "RescueScheme base on number of grid orders:         ";
