@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright           "Copyright 2022, BlueStone."
 #property link                "https://www.mql5.com"
-#property version             "2.07"
+#property version             "2.08"
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
@@ -41,14 +41,14 @@ extern  string                          InpIterationModeAndProfitToCloseStr= "2:
 
 extern   bool                           InpPanicCloseAllowed               = true;        // Use PanicClose?
 extern   int                            InpPanicCloseOrderCount            = 6;           // Num of grid order for PanicClose (0 = disable)
-extern   double                         InpPanicCloseMaxDrawdown           = 0.0;         // MaxDrawdown for PanicClose (0 = disable)
-extern   double                         InpPanicCloseMaxLotSize            = 0.0;         // MaxLotSize for PanicClose (0 = disable)
-extern   double                         InpPanicCloseProfitToClose         = 2.0;        // Profit level for panic close
+extern   double                         InpPanicCloseMaxDrawdown           = -70;         // MaxDrawdown for PanicClose (0 = disable)
+extern   double                         InpPanicCloseMaxLotSize            = 0.1;         // MaxLotSize for PanicClose (0 = disable)
+extern   double                         InpPanicCloseProfitToClose         = -1.0;        // Profit level for panic close
 extern   int                            InpPanicClosePosOfSecondOrder      = 0;           // Position of 2nd panic order 0=Smallest order, 1= next grid order ...;  
-extern   bool                           InpPanicCloseFriftProfitToCloseEachIteration              = false;      // Reduce/Increase ProfiToClose in subsequent PanicClose;  
-extern   double                         InpPanicCloseDriftProfitStep       = -1;       // Step to reduce (-) or increase(+); 
-extern   double                         InpPanicCloseProfitToCloseStopDrift  = 5;       // Min/Max Change to stop drift ProfitToClose; 
-extern   int                            InpStopPanicAfterNClose            = 5;           // Disable panic close after n time
+extern   bool                           InpPanicCloseIsDriftProfitAfterEachIteration              = false;      // Reduce/Increase ProfiToClose in subsequent PanicClose;  
+extern   double                         InpPanicCloseDriftProfitStep       = 1;       // Step to reduce (-) or increase(+); 
+extern   double                         InpPanicCloseDriftLimit            = 5;       // Min/Max Change to stop drift ProfitToClose; 
+extern   int                            InpStopPanicAfterNClose            = 6;           // Disable panic close after n time
    
  
 extern  string  __3__                                                      = "____ BACKTEST AND DEMO ACCOUNT ONLY_______";
@@ -102,9 +102,11 @@ int OnInit()
          Print(__FUNCTION__,": IsOneChartSetup = ", IsOneChartSetup());
          BuyGridCollection = new CGridCollection(_inpsymbol,InpSymbolSuffix,InpMagicNumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment
                                                 ,InpPanicCloseOrderCount,InpPanicCloseMaxDrawdown,InpPanicCloseMaxLotSize,InpPanicCloseProfitToClose,InpPanicClosePosOfSecondOrder,InpStopPanicAfterNClose
+                                                ,InpPanicCloseIsDriftProfitAfterEachIteration,InpPanicCloseDriftProfitStep,InpPanicCloseDriftLimit
                                                 );
          SellGridCollection = new CGridCollection(_inpsymbol,InpSymbolSuffix,InpMagicNumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment
                                                 ,InpPanicCloseOrderCount,InpPanicCloseMaxDrawdown,InpPanicCloseMaxLotSize,InpPanicCloseProfitToClose,InpPanicClosePosOfSecondOrder,InpStopPanicAfterNClose
+                                                ,InpPanicCloseIsDriftProfitAfterEachIteration,InpPanicCloseDriftProfitStep,InpPanicCloseDriftLimit
                                                 );
          BuyGridCollection.mInfo = new CGridDashboard("BuyGridCollectionDB",CORNER_RIGHT_UPPER,600,15,30,3);
          SellGridCollection.mInfo= new CGridDashboard("SellGridCollectionDB",CORNER_RIGHT_UPPER,3,15,30,3);
@@ -136,8 +138,10 @@ int OnInit()
          BuyGrid = new CGridMaster(_inpsymbol,_inpmagicnumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
          SellGrid = new CGridMaster(_inpsymbol,_inpmagicnumber,OP_SELL,InpLevelToStartRescue,InpRescueScheme,InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment);                 // init new Grid objects with the InpMagicNumber
          
-         BuyGrid.GetPanicCloseParameters(InpPanicCloseOrderCount,InpPanicCloseMaxDrawdown,InpPanicCloseMaxLotSize,InpPanicCloseProfitToClose,InpPanicClosePosOfSecondOrder,InpStopPanicAfterNClose);
-         SellGrid.GetPanicCloseParameters(InpPanicCloseOrderCount,InpPanicCloseMaxDrawdown,InpPanicCloseMaxLotSize,InpPanicCloseProfitToClose,InpPanicClosePosOfSecondOrder,InpStopPanicAfterNClose);
+         BuyGrid.GetPanicCloseParameters(InpPanicCloseOrderCount,InpPanicCloseMaxDrawdown,InpPanicCloseMaxLotSize,InpPanicCloseProfitToClose,InpPanicClosePosOfSecondOrder,InpStopPanicAfterNClose
+                                       ,InpPanicCloseIsDriftProfitAfterEachIteration,InpPanicCloseDriftProfitStep,InpPanicCloseDriftLimit);
+         SellGrid.GetPanicCloseParameters(InpPanicCloseOrderCount,InpPanicCloseMaxDrawdown,InpPanicCloseMaxLotSize,InpPanicCloseProfitToClose,InpPanicClosePosOfSecondOrder,InpStopPanicAfterNClose
+                                       ,InpPanicCloseIsDriftProfitAfterEachIteration,InpPanicCloseDriftProfitStep,InpPanicCloseDriftLimit);
 
          //PrintFormat(__FUNCTION__+"Grid Symbol: %s, Magic: %d", _inpsymbol, _inpmagicnumber);   
          //--- Loggings Init - Create 2 dashboard
