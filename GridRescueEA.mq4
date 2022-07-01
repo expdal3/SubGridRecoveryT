@@ -39,13 +39,16 @@ extern  string  __1b__                                                     = "  
 extern  ENUM_BLUES_SUBGRID_MODE_SCHEME  InpRescueScheme                    = _default_;   // Rescue Scheme
 extern  string                          InpIterationModeAndProfitToCloseStr= "2:1.25, 3:2.5, 2:2.0, 3:2.0, 3:1, 3:1, 3:0.5, 3:0.5" ;   // Iteration Mode and ProfitToClose (If select RescueScheme = _Iteration_based_)
 
-extern   bool                           InpPanicCloseAllowed               = false;       // Use PanicClose?
-extern   int                            InpPanicCloseOrderCount            = 0;           // Num of grid order for PanicClose (0 = disable)
+extern   bool                           InpPanicCloseAllowed               = true;        // Use PanicClose?
+extern   int                            InpPanicCloseOrderCount            = 6;           // Num of grid order for PanicClose (0 = disable)
 extern   double                         InpPanicCloseMaxDrawdown           = 0.0;         // MaxDrawdown for PanicClose (0 = disable)
 extern   double                         InpPanicCloseMaxLotSize            = 0.0;         // MaxLotSize for PanicClose (0 = disable)
-extern   double                         InpPanicCloseProfitToClose         = -5.0;        // Profit level for panic close
+extern   double                         InpPanicCloseProfitToClose         = 2.0;        // Profit level for panic close
 extern   int                            InpPanicClosePosOfSecondOrder      = 0;           // Position of 2nd panic order 0=Bottom grid order, 1= next grid order ...;  
-extern   int                            InpStopPanicAfterNClose            = 3;           // Disable panic close after n time
+extern   bool                           InpPanicCloseReduceProfitToCloseEachIteration              = false;      // Reduce ProfiToClose in subsequent PanicClose;  
+extern   double                         InpPanicCloseReduceProfitStep      = -1;       // Step to reduce; 
+extern   double                         InpPanicCloseProfitToCloseBottom   = -5;       // Minimum ProfitToClose to stop reduce; 
+extern   int                            InpStopPanicAfterNClose            = 5;           // Disable panic close after n time
    
  
 extern  string  __3__                                                      = "____ BACKTEST AND DEMO ACCOUNT ONLY_______";
@@ -287,6 +290,7 @@ void OnTick()
          SellGrid.GetSubGridOrders();
          SellGrid.GetGridStats();
       
+      //---normal rescue
       if(InpRescueAllowed==true)
         {
          if(BuyGrid.mIsRecovering==true && BuyGrid.CloseSubGrid(BuyGrid.mSubGrid)){
@@ -300,19 +304,16 @@ void OnTick()
          }
         }
       
+      //---panic close
       if(InpRescueAllowed==true && InpPanicCloseAllowed==true)
         {
          if(BuyGrid.mIsPanic==true){
-            BuyGrid.GetPanicCloseOrders();
-            if(BuyGrid.ClosePanicCloseOrders()){ 
-               BuyGrid.mRescueCount++;
-            }
+            BuyGrid.GetPanicCloseOrders(InpPanicClosePosOfSecondOrder);
+            BuyGrid.ClosePanicCloseOrders();
          }
          if(SellGrid.mIsPanic==true){
-            SellGrid.GetPanicCloseOrders();
-            if(SellGrid.ClosePanicCloseOrders()){ 
-               SellGrid.mRescueCount++;
-            }
+            SellGrid.GetPanicCloseOrders(InpPanicClosePosOfSecondOrder);
+            SellGrid.ClosePanicCloseOrders();
          }
         }
 
