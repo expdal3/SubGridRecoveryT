@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright           "Copyright 2022, BlueStone."
 #property link                "https://www.mql5.com"
-#property version             "2.08"
+#property version             "2.09"
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
@@ -29,7 +29,7 @@ extern string                           InpSymbolSuffix                    = "";
 extern string                           InpMagicNumber                     = "1234";          //EA Magic number(s) - separated by comma (,)
 extern string                           InpTradeComment                    = __FILE__;       //EA Trade comment to rescue
 extern  int                             InpLevelToStartRescue              = 4;              // Order To Start Rescue
-extern  double                          InpSubGridProfitToClose            = 1;              // Sub-grid's Profit to close 
+extern  double                          InpSubGridProfitToClose            = 0.8;              // Sub-grid's Profit to close 
 extern  bool                            InpShowPanel                       = false;          // Show Panel?
 extern  int                             InpPanelFontSize                   = 8;
 
@@ -47,7 +47,7 @@ extern   double                         InpPanicCloseProfitToClose         = -1.
 extern   int                            InpPanicClosePosOfSecondOrder      = 0;           // Position of 2nd panic order 0=Smallest order, 1= next grid order ...;  
 extern   bool                           InpPanicCloseIsDriftProfitAfterEachIteration              = false;      // Reduce/Increase ProfiToClose in subsequent PanicClose;  
 extern   double                         InpPanicCloseDriftProfitStep       = 1;       // Step to reduce (-) or increase(+); 
-extern   double                         InpPanicCloseDriftLimit            = 5;       // Min/Max Change to stop drift ProfitToClose; 
+extern   double                         InpPanicCloseDriftLimit            = 4;       // Min/Max Change to stop drift ProfitToClose; 
 extern   int                            InpStopPanicAfterNClose            = 6;           // Disable panic close after n time
    
  
