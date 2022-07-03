@@ -41,7 +41,7 @@ extern  string                          InpIterationModeAndProfitToCloseStr= "2:
 
 extern   bool                           InpPanicCloseAllowed               = true;        // Use PanicClose?
 extern   int                            InpPanicCloseOrderCount            = 6;           // Num of grid order for PanicClose (0 = disable)
-extern   double                         InpPanicCloseMaxDrawdown           = -70;         // MaxDrawdown for PanicClose (0 = disable)
+extern   double                         InpPanicCloseMaxDrawdown           = -120;         // MaxDrawdown for PanicClose (0 = disable)
 extern   double                         InpPanicCloseMaxLotSize            = 0.1;         // MaxLotSize for PanicClose (0 = disable)
 extern   double                         InpPanicCloseProfitToClose         = -1.0;        // Profit level for panic close
 extern   int                            InpPanicClosePosOfSecondOrder      = 0;           // Position of 2nd panic order 0=Smallest order, 1= next grid order ...;  
