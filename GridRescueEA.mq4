@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright           "Copyright 2022, BlueStone."
 #property link                "https://www.mql5.com"
-#property version             "2.09"
+#property version             "2.10"
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
@@ -75,7 +75,8 @@ double AcctBalance,   AcctEquity;
 int _OrdersTotal = 0;
 int _inpmagicnumber;
 string _inpsymbol;
-int   _testeamagic = 1234;
+int   _testeamagic = 123457;
+bool isonechart = false;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -83,9 +84,13 @@ int   _testeamagic = 1234;
 int OnInit()
   {
 //--- 
+
    _inpsymbol = (InpSymbol=="") ? Symbol(): InpSymbol;
    Print(GetInputInfo(InpSymbol,SYMBOL));
    Print(GetInputInfo(InpMagicNumber,MAGIC));
+   
+   isonechart = IsOneChartSetup();
+   
    if(inpUnlockPass!=pass)
      {
       if (MessageBox("Incorrect Password!",MB_OK)==1);
@@ -98,7 +103,7 @@ int OnInit()
       tradeInfo = new CTradeInfo();
       
       
-      if(IsOneChartSetup()==true){
+      if(isonechart==true){
          Print(__FUNCTION__,": IsOneChartSetup = ", IsOneChartSetup());
          BuyGridCollection = new CGridCollection(_inpsymbol,InpSymbolSuffix,InpMagicNumber,OP_BUY,InpLevelToStartRescue,InpRescueScheme, InpSubGridProfitToClose,InpIterationModeAndProfitToCloseStr,InpTradeComment
                                                 ,InpPanicCloseOrderCount,InpPanicCloseMaxDrawdown,InpPanicCloseMaxLotSize,InpPanicCloseProfitToClose,InpPanicClosePosOfSecondOrder,InpStopPanicAfterNClose
@@ -108,20 +113,24 @@ int OnInit()
                                                 ,InpPanicCloseOrderCount,InpPanicCloseMaxDrawdown,InpPanicCloseMaxLotSize,InpPanicCloseProfitToClose,InpPanicClosePosOfSecondOrder,InpStopPanicAfterNClose
                                                 ,InpPanicCloseIsDriftProfitAfterEachIteration,InpPanicCloseDriftProfitStep,InpPanicCloseDriftLimit
                                                 );
-         BuyGridCollection.mInfo = new CGridDashboard("BuyGridCollectionDB",CORNER_RIGHT_UPPER,700,15,30,3);
-         SellGridCollection.mInfo= new CGridDashboard("SellGridCollectionDB",CORNER_RIGHT_UPPER,10,15,30,3);
-
+         BuyGridCollection.mInfo = new CGridDashboard("BuyGridCollectionDB",CORNER_RIGHT_UPPER,500,15,30,4);
+         SellGridCollection.mInfo= new CGridDashboard("SellGridCollectionDB",CORNER_RIGHT_UPPER,10,15,30,4);
          
          if(InpShowPanel==true)
          {
          //--- Loggings Init - Create 2 Collection dashboard
 
          BuyGridCollection.mInfo.Add("BUY Grids                                           "
-                                     ,"Name          Type        Profit  Size   BeingRescued?   Iter    RescueCount  PanicCount "
+                                     ,"Name     Type | Profit | Size | Rescue?(Iter) | Rescue | Panic"
                                      ,InpPanelFontSize);
-         SellGridCollection.mInfo.Add("SELL Grids                                           "
-                                     ,"Name          Type        Profit  Size   BeingRescued?   Iter    RescueCount  PanicCount "
+         SellGridCollection.mInfo.Add("SELL Grids                                         "
+                                     ,"Name     Type | Profit | Size | Rescue?(Iter) | Rescue | Panic"
                                      ,InpPanelFontSize);  
+         BuyGridCollection.mInfo.mDashboard.SetRowText(4,                                        // if ticket if found to be active, show the grid in panel
+                                                   "                                              Count     Count");
+         SellGridCollection.mInfo.mDashboard.SetRowText(4,                                        // if ticket if found to be active, show the grid in panel
+                                                   "                                              Count     Count");
+         
          }else{
             BuyGridCollection.mInfo.mDashboard.DeleteAll();
             SellGridCollection.mInfo.mDashboard.DeleteAll();         
@@ -266,11 +275,11 @@ void OnTick()
      }
    #endif
    
-   if(IsOneChartSetup())
+   if(isonechart)
      {
          BuyGridCollection.RescueGrid(InpRescueAllowed, InpPanicCloseAllowed);
          SellGridCollection.RescueGrid(InpRescueAllowed, InpPanicCloseAllowed);
-         if(IsNewBar())
+         if(IsNewBar() || IsNewSession(5) )
            {
             BuyGridCollection.ShowCollectionOrdersOnChart();
             SellGridCollection.ShowCollectionOrdersOnChart();
@@ -322,7 +331,7 @@ void OnTick()
         }
 
    //Collect data to array
-   if(IsNewBar() )
+   if(IsNewBar() || IsNewSession(5) )     //trigger if new bar or every 5 seconds
      {
          if(InpShowPanel==true)
            {
