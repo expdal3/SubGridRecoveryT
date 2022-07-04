@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright           "Copyright 2022, BlueStone."
 #property link                "https://www.mql5.com"
-#property version             "2.10"
+#property version             "2.11"
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
@@ -50,6 +50,7 @@ extern   double                         InpPanicCloseDriftProfitStep       = 1; 
 extern   double                         InpPanicCloseDriftLimit            = 4;       // Min/Max Change to stop drift ProfitToClose; 
 extern   int                            InpStopPanicAfterNClose            = 6;           // Disable panic close after n time
    
+extern  bool                            InpDebug                           = false;
  
 extern  string  __3__                                                      = "____ BACKTEST AND DEMO ACCOUNT ONLY_______";
 extern bool                             InpOpenNewGridTrade   = false; // Open new grid to test?
@@ -75,7 +76,7 @@ double AcctBalance,   AcctEquity;
 int _OrdersTotal = 0;
 int _inpmagicnumber;
 string _inpsymbol;
-int   _testeamagic = 123457;
+int   _testeamagic = 1234;
 bool isonechart = false;
 
 //+------------------------------------------------------------------+
@@ -277,8 +278,8 @@ void OnTick()
    
    if(isonechart)
      {
-         BuyGridCollection.RescueGrid(InpRescueAllowed, InpPanicCloseAllowed);
-         SellGridCollection.RescueGrid(InpRescueAllowed, InpPanicCloseAllowed);
+         BuyGridCollection.RescueGrid(InpRescueAllowed, InpPanicCloseAllowed, InpDebug);
+         SellGridCollection.RescueGrid(InpRescueAllowed, InpPanicCloseAllowed, InpDebug);
          if(IsNewBar() || IsNewSession(5) )
            {
             BuyGridCollection.ShowCollectionOrdersOnChart();
