@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright           "Copyright 2022, BlueStone."
 #property link                "https://www.mql5.com"
-#property version             "2.11.01"
+#property version             "2.11.02"
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders"
 #property strict
 
@@ -279,11 +279,11 @@ void OnTick()
    if(isonechart)
      {
 
-         BuyGridCollection.RescueGrid(InpRescueAllowed, InpPanicCloseAllowed, InpDebug);
-         SellGridCollection.RescueGrid(InpRescueAllowed, InpPanicCloseAllowed, InpDebug);
+         BuyGridCollection.OnTick(InpRescueAllowed, InpPanicCloseAllowed, InpDebug);
+         SellGridCollection.OnTick(InpRescueAllowed, InpPanicCloseAllowed, InpDebug);
          
-         BuyGridCollection.GetMasterGrid(InpDebug);
-         SellGridCollection.GetMasterGrid(InpDebug);
+         //BuyGridCollection.GetMasterGrid(InpDebug);
+         //SellGridCollection.GetMasterGrid(InpDebug);
          if(IsNewBar() || IsNewSession(5) )
            {
             BuyGridCollection.ShowCollectionOrdersOnChart();
