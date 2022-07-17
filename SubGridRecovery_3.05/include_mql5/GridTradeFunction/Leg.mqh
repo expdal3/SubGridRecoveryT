@@ -34,8 +34,7 @@ protected:
 	
    //---BlueStone Extension
 	
-private:
-   string               mSymbol;                         //this enable multipair trading	
+private:	
    double               mMultiplyFactor;                 //Multiply factor for order size
    SLegStat             mLegStat;
    bool                 mTieBreak;                       //TieBreak when lotsize = 0.01
@@ -45,7 +44,7 @@ private:
 	
 public:
 
-	CLeg(string symbol, 	double multiplyFactor                              // (multiplyFactor is added)
+	CLeg(	double multiplyFactor                              // (multiplyFactor is added)
 	      , double levelSize,
 			ENUM_POSITION_TYPE legType,
 			double orderSize, string tradeComment, long magic);
@@ -54,12 +53,11 @@ public:
 
 };
 
-CLeg::CLeg(string symbol, double multiplyFactor, double levelSize,
+CLeg::CLeg(double multiplyFactor, double levelSize,
 			ENUM_POSITION_TYPE legType,
 			double orderSize, string tradeComment, long magic)
-			: CLegBase(symbol, legType, orderSize, tradeComment, magic) {
-   
-   mSymbol = symbol;
+			: CLegBase(legType, orderSize, tradeComment, magic) {
+
 	mLevelSize		=	levelSize;
    mMultiplyFactor		=	multiplyFactor;
    
@@ -87,16 +85,11 @@ void	CLeg::Loop() {
 		CloseAll();
 	}
    
-   //__DEBUG__
-   //PrintFormat(__FUNCTION__+"%s (mCount==0: %s || mLastTick.ask<=mEntry: %s)",mSymbol, (string) (mCount==0), (string)(mLastTick.ask<=mEntry));
-   //PrintFormat(__FUNCTION__+"%s CurrentAsk: %.5f, mEntry:  %.5f, mLastTick.ask: %.5f)",mSymbol, SymbolInfoDouble(mSymbol,SYMBOL_ASK), mEntry, mLastTick.ask);
-   //PrintFormat(__FUNCTION__+"%s mLegType: %s:  %s)",mSymbol, (string) mLegType, (string) (mLegType==POSITION_TYPE_BUY));
-	
+   //PrintFormat(__FUNCTION__+"(mCount==0: %s || mLastTick.ask<=mEntry: %s)",(string) (mCount==0), (string)(mLastTick.ask<=mEntry));
 	//	Finally the new trade entries
 	if (mLegType==POSITION_TYPE_BUY) {
 		if (mCount==0 || mLastTick.ask<=mEntry) {
-      //PrintFormat(__FUNCTION__+"%s OpenTrade at mLastTick.ask: %.2f",mSymbol, mLastTick.ask);
-		OpenTrade(mLastTick.ask);
+			OpenTrade(mLastTick.ask);
 		}	
 	} else {
 		if (mCount==0 || mLastTick.bid>=mEntry) {
@@ -147,7 +140,7 @@ void	CLeg::OpenTrade(double price) {
 	#ifdef __MQL5__
 	   _lot = LotAdjuster(_lot);
 	#endif 
-
+	
 	Trade.PositionOpen(mSymbol, (ENUM_ORDER_TYPE)mLegType, _lot, price, 0, 0, mTradeComment);       //_lot replace mOrderSize which from CExpertBase
 	Recount();
 

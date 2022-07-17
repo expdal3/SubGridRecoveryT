@@ -15,32 +15,32 @@
 class CExpert : public CExpertBase {
 
 protected:
-
+   
 	CLeg*						mBuyLeg;
 	CLeg*						mSellLeg;
 
 protected:
-
+   
 	double	mLevelSize;
 	
 	virtual void		Loop();
 
 public:
 
-	CExpert(	int levelPoints,
+	CExpert(	string symbol, int levelPoints,
 				double orderSize, string tradeComment, long magic);
 	~CExpert();
 
 };
 
 
-CExpert::CExpert(int levelPoints, double orderSize, string tradeComment, long magic)
-						:	CExpertBase(orderSize, tradeComment, magic) {
+CExpert::CExpert(string symbol, int levelPoints, double orderSize, string tradeComment, long magic)
+						:	CExpertBase(symbol, orderSize, tradeComment, magic) {
 
-	mLevelSize		=	PointsToDouble(levelPoints);
+	mLevelSize		=	PointsToDouble(symbol, levelPoints);
 
-	mBuyLeg			=	new CLeg(1,mLevelSize, POSITION_TYPE_BUY, mOrderSize, mTradeComment, mMagic);
-	mSellLeg			=	new CLeg(1,mLevelSize, POSITION_TYPE_SELL, mOrderSize, mTradeComment, mMagic);
+	mBuyLeg			=	new CLeg(symbol,1,mLevelSize, POSITION_TYPE_BUY, mOrderSize, mTradeComment, mMagic);
+	mSellLeg			=	new CLeg(symbol,1,mLevelSize, POSITION_TYPE_SELL, mOrderSize, mTradeComment, mMagic);
 	
 	mInitResult		=	INIT_SUCCEEDED;
 	
