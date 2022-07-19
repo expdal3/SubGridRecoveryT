@@ -1,3 +1,4 @@
+#define MVersion "3.10"
 //+------------------------------------------------------------------+
 //|                                            SubGridRecoveryEA.mq4 |
 //|                                       Copyright 2022, BlueStone. |
@@ -5,7 +6,7 @@
 //+------------------------------------------------------------------+
 #property copyright           "Copyright 2022, BlueStone."
 #property link                "https://www.mql5.com"
-#property version             "3.09"
+#property version             MVersion
 #property description         "EA to rescue Grid / Martingale Drawdown by closing off sub-grid orders. MultiPair enabled"
 #property description         "Fixed various bugs in GridCollection and GridOrderManagement"
 #property description         "Add Time-Base CriticalClose feature"
