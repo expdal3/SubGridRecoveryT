@@ -1,4 +1,4 @@
-#define MVersion "3.10"
+#define MVersion "3.11"
 //+------------------------------------------------------------------+
 //|                                            SubGridRecoveryEA.mq4 |
 //|                                       Copyright 2022, BlueStone. |
