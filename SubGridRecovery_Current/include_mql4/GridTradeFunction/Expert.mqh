@@ -27,20 +27,20 @@ protected:
 
 public:
 
-	CExpert(	string symbol, int levelPoints,
-				double orderSize, string tradeComment, long magic);
+	CExpert(	string symbol, int levelPoints, int levelToStartAveraging, ENUM_GRID_TRAILORDERSIZE_OPT trailOrderSizeOption
+				,double orderSize, string tradeComment, long magic);
 	~CExpert();
 
 };
 
 
-CExpert::CExpert(string symbol, int levelPoints, double orderSize, string tradeComment, long magic)
+CExpert::CExpert(string symbol, int levelPoints, int levelToStartAveraging, ENUM_GRID_TRAILORDERSIZE_OPT trailOrderSizeOption, double orderSize, string tradeComment, long magic)
 						:	CExpertBase(symbol, orderSize, tradeComment, magic) {
 
 	mLevelSize		=	PointsToDouble(symbol, levelPoints);
 
-	mBuyLeg			=	new CLeg(symbol,1,mLevelSize, POSITION_TYPE_BUY, mOrderSize, mTradeComment, mMagic);
-	mSellLeg			=	new CLeg(symbol,1,mLevelSize, POSITION_TYPE_SELL, mOrderSize, mTradeComment, mMagic);
+	mBuyLeg			=	new CLeg(symbol,1,mLevelSize, POSITION_TYPE_BUY, levelToStartAveraging, trailOrderSizeOption, mOrderSize, mTradeComment, mMagic);
+	mSellLeg			=	new CLeg(symbol,1,mLevelSize, POSITION_TYPE_SELL,levelToStartAveraging, trailOrderSizeOption, mOrderSize, mTradeComment, mMagic);
 	
 	mInitResult		=	INIT_SUCCEEDED;
 	
