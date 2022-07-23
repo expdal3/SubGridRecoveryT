@@ -92,14 +92,16 @@ CExpertCollection::CExpertCollection(string symbolStringList,string suffix,strin
 void		CExpertCollection::OnTick() {
    
    if (mFirstTime == true) 	{Setup(); mFirstTime=false;}
-   //#ifdef _DEBUG PrintFormat(__FUNCTION__+"mTradingTime.IsInRange: %s", (string) mTradingTime.IsInRange()); #endif
+   //#ifdef _DEBUG 
+ 
+   //#endif
    MqlDateTime mqlNow;   
    TimeCurrent(mqlNow);  
    bool isInRange = false;
-   if  (mqlNow.day_of_week  < 1 || mqlNow.day_of_week  >4 ) isInRange = mTradingTime.IsInRange();
-   else isInRange = mTradingTimeFriday.IsInRange();
-   
-   //PrintFormat("Current Day is: %s ", DayOfWeekStr( mqlNow.day_of_week));
+   if  (mqlNow.day_of_week  >= 1 && mqlNow.day_of_week  <=4 ) isInRange = mTradingTime.IsInRange();
+   else isInRange = mTradingTimeFriday.IsInRange();   
+   PrintFormat(__FUNCTION__+"IsInRange: %s", (string) isInRange);
+   PrintFormat("Current Day is: %s ", DayOfWeekStr( mqlNow.day_of_week));
    for(int i=0;i<=ArraySize(mPool)-1;i++){
       if(!isInRange){                  // if outside of trading time range
       
