@@ -100,8 +100,8 @@ void		CExpertCollection::OnTick() {
    bool isInRange = false;
    if  (mqlNow.day_of_week  >= 1 && mqlNow.day_of_week  <=4 ) isInRange = mTradingTime.IsInRange();
    else isInRange = mTradingTimeFriday.IsInRange();   
-   PrintFormat(__FUNCTION__+"IsInRange: %s", (string) isInRange);
-   PrintFormat("Current Day is: %s ", DayOfWeekStr( mqlNow.day_of_week));
+   //PrintFormat(__FUNCTION__+"IsInRange: %s", (string) isInRange);
+   //PrintFormat("Current Day is: %s ", DayOfWeekStr( mqlNow.day_of_week));
    for(int i=0;i<=ArraySize(mPool)-1;i++){
       if(!isInRange){                  // if outside of trading time range
       
